@@ -7,8 +7,7 @@ plugins {
 
     alias(libs.plugins.google.ksp)
 
-    // TAMBAHKAN INI: Menghilangkan error Unresolved Reference pada pustaka jan_tennert
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -17,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.subrek"
-        minSdk = 26 // Dipaksa ke SDK 26 demi jaminan kompatibilitas fungsi datetime modern & background task
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
