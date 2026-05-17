@@ -1,24 +1,21 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
-    // Terapkan plugin baru di sini:
+    
+    // Aktifkan di sini
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
 }
 
 android {
     namespace = "com.example.subrek"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.subrek"
-        minSdk = 26
-        targetSdk = 35
+        minSdk = 26 // Dipaksa ke SDK 26 demi jaminan kompatibilitas fungsi datetime modern & background task
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -35,19 +32,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-
     buildFeatures {
         compose = true
     }
 }
 
-// Migrate from kotlinOptions to compilerOptions to fix deprecation warning
-tasks.withType<KotlinCompile>().configureEach {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -56,7 +51,7 @@ kapt {
 }
 
 dependencies {
-    // Library bawaan yang sudah ada
+    // AndroidX & Compose Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -66,17 +61,16 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // 1. Dependency Injection (Dagger Hilt)
+    // Hilt Dependency Injection
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
-    kapt(libs.kotlinx.metadata.jvm)
 
-    // 2. Local Database (Room)
+    // Room Database Local Storage
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
 
-    // 3. Remote Database & Network (Supabase & Ktor)
+    // Supabase Remote Backend Engine
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.gotrue)
     implementation(libs.ktor.client.android)
