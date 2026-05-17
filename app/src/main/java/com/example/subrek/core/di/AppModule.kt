@@ -9,24 +9,24 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.github.jan_tennert.supabase.SupabaseClient
-import io.github.jan_tennert.supabase.createSupabaseClient
-import io.github.jan_tennert.supabase.gotrue.Auth
-import io.github.jan_tennert.supabase.postgrest.Postgrest
+// --- PERBAIKAN IMPORT SUPABASE ---
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.Auth
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-@Suppress("unused")
 object AppModule {
-
-    private const val SUPABASE_URL = "https://gjnbqivjikulpjoovcme.supabase.co"
-    private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqbmJxaXZqaWt1bHBqb292Y21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjY1NTksImV4cCI6MjA5NDYwMjU1OX0.J7s9iydrufRmxd6eKioEiNajBp5piaPPx4NE9yAT8lI"
 
     @Provides
     @Singleton
     fun provideSupabaseClient(): SupabaseClient {
-        return createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY) {
+        return createSupabaseClient(
+            supabaseUrl = "https://your-project-url.supabase.co",
+            supabaseKey = "your-anon-key"
+        ) {
             install(Postgrest)
             install(Auth)
         }
@@ -39,8 +39,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "subrek_database"
-        ).fallbackToDestructiveMigration(dropAllTables = true)
-            .build()
+        ).build()
     }
 
     @Provides

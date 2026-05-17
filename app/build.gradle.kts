@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
 
-    // Supabase Remote Backend Engine
+    // Supabase Remote Backend Engine (Menggunakan alias yang valid dari libs.versions.toml)
     implementation(libs.supabaseKt)
     implementation(libs.supabasePostgrest)
     implementation(libs.supabaseAuth)
