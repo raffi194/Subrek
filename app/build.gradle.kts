@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
 
+    alias(libs.plugins.google.ksp)
+
     // TAMBAHKAN INI: Menghilangkan error Unresolved Reference pada pustaka jan_tennert
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
 }
@@ -69,7 +71,7 @@ dependencies {
     // Room Database Local Storage
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    kapt(libs.room.compiler)
+    ksp(libs.room.compiler)
 
     // Supabase Remote Backend Engine (Menggunakan alias yang valid dari libs.versions.toml)
     implementation(libs.supabaseKt)
