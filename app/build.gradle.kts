@@ -71,8 +71,9 @@ dependencies {
     kapt(libs.room.compiler)
 
     // Supabase Remote Backend Engine
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.gotrue)
+    implementation(libs.supabaseKt)
+    implementation(libs.supabasePostgrest)
+    implementation(libs.supabaseAuth)
     implementation(libs.ktor.client.android)
 
     // Testing

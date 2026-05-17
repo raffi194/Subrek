@@ -75,4 +75,60 @@ CREATE TRIGGER update_subscriptions_modtime
     BEFORE UPDATE ON public.subscriptions
     FOR EACH ROW
     EXECUTE PROCEDURE update_modified_column();
+
+---
+
+## 4. Tambahan Manajemen Profil Pengguna Nativ (Kebutuhan Auth & Metadata)
+
+Jalankan skrip ini untuk membuat otomatis data profil pengguna sesaat setelah user mendaftar (Sign Up) di aplikasi Android:
+
+```sql
+CREATE TABLE public.profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    avatar_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Mengaktifkan RLS pada tabel profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Kebijakan RLS Tabel Profiles
+CREATE POLICY "Pengguna dapat melihat profil mereka sendiri." 
+ON public.profiles FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Pengguna dapat memperbarui profil mereka sendiri." 
+ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Otomasi Trigger Pembuatan Profil via Supabase Auth System
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+```
+
+---
+
+### 🟢 Status Saat Ini (Verifikasi Kelulusan Step 2.3)
+
+1. **Instalasi Tambahan:** Tidak ada perubahan gradle. Semua SDK Supabase, Ktor, dan Room dari Fase 1 telah terpasang dengan baik.
+2. **Kepatuhan Arsitektur:** Kerangka sinkronisasi data lokal-cloud terbentuk secara terisolasi lewat kelas pembatas DTO dan Data Mappers.
+3. **Build & Sync:** Silakan lakukan **Build -> Rebuild Project** untuk memastikan seluruh anotasi `io.github.jan-tennert.supabase` dan `kotlinx.serialization` dikompilasi dengan lancar.
+
+Pengerjaan **Step 2.3** sekaligus penyelesaian penuh
+
 ```
