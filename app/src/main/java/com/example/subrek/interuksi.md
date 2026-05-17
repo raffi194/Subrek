@@ -29,8 +29,8 @@ Instruksi untuk AI Agent: Kerjakan tugas berdasarkan urutan Fase dan Step di baw
 * [cite_start]**Output:** Struktur data bisnis inti terbentuk tanpa interferensi database[cite: 40, 41].
 
 ### Step 2.2: Implementasi Room Local Database (Offline-First Basis)
-* [cite_start]**Tugas AI:** Tulis Room Entity (dengan anotasi `@Entity`), Data Access Object (DAO) dengan kueri CRUD dasar, dan kelas database utamanya[cite: 41, 43].
-* [cite_start]**Output:** Local data source siap mengeksekusi operasi ke SQLite lokal secara aman[cite: 41, 43].
+* [cite_start]**Tugas AI:** Tuliskan Room Entity menggunakan anotasi @Entity (ubah tipe data file/image menjadi String/VARCHAR), Data Access Object (DAO) dengan kueri CRUD dasar menggunakan SQL query eksplisit, serta kelas database utamanya (RoomDatabase). Pastikan semua SQL query dan konfigurasi keamanan lokal (RLS/constraint) sudah tertulis lengkap agar saya bisa langsung pakai tanpa setup tambahan.
+* [cite_start]**Output:** ersedianya arsitektur local data source yang siap pakai berupa Room Entity dengan konversi tipe data file ke String/VARCHAR, DAO dengan kueri CRUD SQL eksplisit, serta kelas utama RoomDatabase yang dikonfigurasi secara aman dengan constraint data lokal untuk memastikan fungsionalitas offline-first berjalan langsung tanpa setup tambahan.
 
 ### Step 2.3: Integrasi Awal Remote Data Source (Supabase Client)
 * [cite_start]**Tugas AI:** Setup konfigurasi Supabase Client SDK di level data source remote[cite: 41]. Buat fungsi *mapping* data dari Room Entity ke Supabase DTO dan sebaliknya.

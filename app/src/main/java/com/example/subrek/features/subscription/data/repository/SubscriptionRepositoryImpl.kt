@@ -12,11 +12,21 @@ class SubscriptionRepositoryImpl @Inject constructor() : SubscriptionRepository 
         return flowOf(emptyList())
     }
 
-    override suspend fun addSubscription(subscription: Subscription) {
+    override suspend fun getSubscriptionById(id: String): Subscription? {
+        // Implementation
+        return null
+    }
+
+    override suspend fun insertSubscription(subscription: Subscription) {
         // Implementation
     }
 
     override suspend fun deleteSubscription(id: String) {
         // Implementation
+    }
+
+    override suspend fun syncWithRemote(): Result<Unit> {
+        // Implementation
+        return Result.success(Unit)
     }
 }
