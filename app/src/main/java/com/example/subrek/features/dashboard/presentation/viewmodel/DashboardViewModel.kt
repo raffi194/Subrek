@@ -17,42 +17,35 @@ enum class SortOption { NAME, PRICE_DESC, NEXT_PAYMENT }
 
 data class DashboardUiState(
     val statsState: UiState<DashboardStats> = UiState.Loading,
-    val subscriptionsList: List<Subscription> = emptyList(),
+    val subscriptionsList: List<Subscription> = emptyList(), // List untuk List View (Bisa Ter-filter)
+    val rawSubscriptions: List<Subscription> = emptyList(),   // List Utuh Asli (Untuk Komponen Grafik Chart)
     val selectedCategory: String = "Semua",
-    val selectedPaymentMethod: String = "Semua",
     val currentSortOption: SortOption = SortOption.NEXT_PAYMENT
 )
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
+    private val dashboardRepository: DashboardRepository,
     private val getDashboardStatsUseCase: GetDashboardStatsUseCase
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Semua")
-    private val _selectedPaymentMethod = MutableStateFlow("Semua")
     private val _currentSortOption = MutableStateFlow(SortOption.NEXT_PAYMENT)
 
     val uiState: StateFlow<DashboardUiState> = combine(
         subscriptionRepository.getAllSubscriptions(),
         _selectedCategory,
-        _selectedPaymentMethod,
         _currentSortOption
-    ) { subs, category, payment, sortOption ->
+    ) { subs, category, sortOption ->
         
-        // 1. Kalkulasi Statistik Atas secara dinamis dari data murni asli
         val stats = getDashboardStatsUseCase(subs)
 
-        // 2. Filter data berdasarkan Kategori & Metode Pembayaran
         var filteredList = subs
         if (category != "Semua") {
             filteredList = filteredList.filter { it.category == category }
         }
-        if (payment != "Semua") {
-            filteredList = filteredList.filter { it.paymentMethod == payment }
-        }
 
-        // 3. Urutkan (*Sorting*) data berdasarkan opsi terpilih
         filteredList = when (sortOption) {
             SortOption.NAME -> filteredList.sortedBy { it.name.lowercase() }
             SortOption.PRICE_DESC -> filteredList.sortedByDescending { it.price }
@@ -62,8 +55,8 @@ class DashboardViewModel @Inject constructor(
         DashboardUiState(
             statsState = UiState.Success(stats),
             subscriptionsList = filteredList,
+            rawSubscriptions = subs, // Menyimpan list utuh untuk validasi chart >= 2 data
             selectedCategory = category,
-            selectedPaymentMethod = payment,
             currentSortOption = sortOption
         )
     }.stateIn(
@@ -73,7 +66,6 @@ class DashboardViewModel @Inject constructor(
     )
 
     fun changeCategoryFilter(category: String) { _selectedCategory.value = category }
-    fun changePaymentFilter(method: String) { _selectedPaymentMethod.value = method }
     fun changeSortOption(option: SortOption) { _currentSortOption.value = option }
 
     fun triggerSync() {

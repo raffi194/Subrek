@@ -1,5 +1,8 @@
 package com.example.subrek.features.dashboard.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.subrek.core.theme.*
 import com.example.subrek.core.utils.UiState
+import com.example.subrek.features.dashboard.presentation.components.DonutChartCategories
+import com.example.subrek.features.dashboard.presentation.components.HorizontalBarChartMethods
 import com.example.subrek.features.dashboard.presentation.viewmodel.DashboardViewModel
-import com.example.subrek.features.dashboard.presentation.viewmodel.SortOption
 import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.subscription.domain.model.SubscriptionStatus
 import java.text.NumberFormat
@@ -51,83 +55,116 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToAddSubscription, containerColor = Blue600, contentColor = MaterialTheme.colorScheme.onPrimary) {
-                Icon(Icons.Default.Add, "Tambah Layanan")
+                Icon(Icons.Default.Add, "Tambah")
             }
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Slate950)
-                .padding(paddingValues)
+                .padding(paddingValues),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. RINGKASAN PENGELUARAN BULANAN (IDR CARD) DI BAGIAN ATAS
-            when (val stats = state.statsState) {
-                is UiState.Success -> {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Slate900)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text("Estimasi Pengeluaran Bulanan", color = Slate400, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            
-                            val formattedPrice = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).format(stats.data.totalMonthlySpend)
-                            Text(formattedPrice, color = MaterialTheme.colorScheme.onBackground, fontSize = 28.sp, fontWeight = FontWeight.Black)
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column {
-                                    Text("Segera Tagihan", color = Slate400, fontSize = 11.sp)
-                                    Text("${stats.data.upcomingBillsCount} Layanan", color = Amber500, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text("Termahal", color = Slate400, fontSize = 11.sp)
-                                    Text(stats.data.mostExpensiveSubscription ?: "-", color = Rose500, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            // 1. KARTU ESTIMASI RINGKASAN IDR UTAMA ATAS
+            item {
+                when (val stats = state.statsState) {
+                    is UiState.Success -> {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Slate900)
+                        ) {
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                Text("Estimasi Pengeluaran Bulanan", color = Slate400, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                val formattedPrice = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).format(stats.data.totalMonthlySpend)
+                                Text(formattedPrice, color = MaterialTheme.colorScheme.onBackground, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Column {
+                                        Text("Segera Tagihan", color = Slate400, fontSize = 11.sp)
+                                        Text("${stats.data.upcomingBillsCount} Layanan", color = Amber500, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text("Termahal", color = Slate400, fontSize = 11.sp)
+                                        Text(stats.data.mostExpensiveSubscription ?: "-", color = Rose500, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    }
                                 }
                             }
                         }
                     }
+                    is UiState.Loading -> Box(modifier = Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Blue500) }
+                    else -> Unit
                 }
-                is UiState.Loading -> Box(modifier = Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Blue500) }
-                else -> Unit
             }
 
-            // 2. FILTER & SORT BAR (LOGIKA PENYARINGAN CHIPS)
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(categories) { cat ->
-                    val isSelected = state.selectedCategory == cat
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { viewModel.changeCategoryFilter(cat) },
-                        label = { Text(cat) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Blue600,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = Slate900,
-                            labelColor = Slate400
+            // 2. TUGAS UTAMA STEP 3.4: VISUALISASI GRAFIK KUSTOM (AKTIF INTERAKTIF JIKA DATA >= 2)
+            item {
+                AnimatedVisibility(
+                    visible = state.rawSubscriptions.size >= 2,
+                    enter = fadeIn() + expandVertically()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Merender Donut Chart proporsi pengeluaran kategori
+                        DonutChartCategories(subscriptions = state.rawSubscriptions)
+                        
+                        // Merender diagram batang horizontal sebaran payment metode
+                        HorizontalBarChartMethods(subscriptions = state.rawSubscriptions)
+                    }
+                }
+            }
+
+            // 3. SEPARATOR JUDUL LIST VIEW
+            item {
+                Text(
+                    text = "Daftar Layanan Anda",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                )
+            }
+
+            // 4. LAZYROW CHIPS FILTER BAR
+            item {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(categories) { cat ->
+                        val isSelected = state.selectedCategory == cat
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.changeCategoryFilter(cat) },
+                            label = { Text(cat) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Blue600,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = Slate900,
+                                labelColor = Slate400
+                            )
                         )
-                    )
+                    }
                 }
             }
 
-            // 3. LAZYCOLUMN MENAMPILKAN DAFTAR SUBSCRIPTION AKTIF LENGKAP BADGE DINAMIS
+            // 5. RENDER DAFTAR SUBSCRIPTION ITEM DENGAN DYNAMIC BADGES TEMPO
             if (state.subscriptionsList.isEmpty()) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("Tidak ada langganan aktif ditemukan", color = Slate400, fontSize = 14.sp)
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
+                        Text("Tidak ada langganan aktif ditemukan", color = Slate400, fontSize = 14.sp)
+                    }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.subscriptionsList, key = { it.id }) { item ->
+                items(state.subscriptionsList, key = { it.id }) { item ->
+                    Box(modifier = Modifier.padding(horizontal = 24.dp)) {
                         SubscriptionItemRow(item)
                     }
                 }
@@ -151,7 +188,6 @@ fun SubscriptionItemRow(sub: Subscription) {
             Text("${sub.category} • ${sub.paymentMethod}", fontSize = 12.sp, color = Slate400)
             Spacer(modifier = Modifier.height(8.dp))
             
-            // LOGIKA DETEKSI BADGE STATUS JATUH TEMPO DINAMIS
             val today = LocalDate.now()
             val daysDiff = ChronoUnit.DAYS.between(today, sub.nextPaymentDate)
             

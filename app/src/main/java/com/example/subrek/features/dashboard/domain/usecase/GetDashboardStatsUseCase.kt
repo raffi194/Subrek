@@ -9,23 +9,23 @@ import javax.inject.Inject
 
 class GetDashboardStatsUseCase @Inject constructor() {
     
-    // Menerima list data riil dari Room, lalu mengkalkulasi statistik akumulatif secara dinamis
     operator fun invoke(subscriptions: List<Subscription>): DashboardStats {
-        val activeSubs = subscriptions.filter { it.status == SubscriptionStatus.ACTIVE || it.status == SubscriptionStatus.TRIAL }
+        val activeSubs = subscriptions.filter { 
+            it.status == SubscriptionStatus.ACTIVE || it.status == SubscriptionStatus.TRIAL 
+        }
         
         val totalMonthlySpend = activeSubs.sumOf { sub ->
-            // Konversikan semua harga pengeluaran secara proporsional ke rentang bulanan murni
             when (sub.billingCycle.name) {
                 "WEEKLY" -> sub.price * 4.33
                 "YEARLY" -> sub.price / 12.0
-                else -> sub.price // MONTHLY
+                else -> sub.price
             }
         }
 
         val today = LocalDate.now()
         val upcomingBillsCount = activeSubs.count { sub ->
             val daysToPayment = ChronoUnit.DAYS.between(today, sub.nextPaymentDate)
-            daysToPayment in 0..7 // Jatuh tempo dalam waktu 7 hari ke depan
+            daysToPayment in 0..7
         }
 
         val mostExpensive = activeSubs.maxByOrNull { it.price }?.name ?: "-"

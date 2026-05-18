@@ -1,9 +1,9 @@
--- 1. Mengaktifkan Ekstensi UUID jika diperlukan
+-- Aktivasi ekstensi UUID
 create extension if not exists "uuid-ossp";
 
--- 2. Pembuatan Tabel Subscriptions (Sesuai dengan Atribut SubscriptionDto lokal)
+-- Pembuatan Tabel Utama Subscriptions
 create table if not exists public.subscriptions (
-    id text primary key, -- Menggunakan UUID string dari client Android
+    id text primary key,
     user_id uuid references auth.users(id) on delete cascade not null,
     name text not null,
     price numeric(12, 2) not null default 0.00,
@@ -17,28 +17,16 @@ create table if not exists public.subscriptions (
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 3. Mengaktifkan Row Level Security (RLS) demi keamanan multi-tenant
+-- Aktifkan keamanan baris (RLS)
 alter table public.subscriptions enable row level security;
 
--- 4. Pembuatan Kebijakan Keamanan (RLS Policies)
-create policy "Pengaruh data mandiri pengguna - Select" 
-on public.subscriptions for select 
-using (auth.uid() = user_id);
+-- Kebijakan Multi-Tenant (User hanya bisa akses datanya sendiri)
+create policy "Akses data mandiri - SELECT" on public.subscriptions for select using (auth.uid() = user_id);
+create policy "Akses data mandiri - INSERT" on public.subscriptions for insert with check (auth.uid() = user_id);
+create policy "Akses data mandiri - UPDATE" on public.subscriptions for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Akses data mandiri - DELETE" on public.subscriptions for delete using (auth.uid() = user_id);
 
-create policy "Pengaruh data mandiri pengguna - Insert" 
-on public.subscriptions for insert 
-with check (auth.uid() = user_id);
-
-create policy "Pengaruh data mandiri pengguna - Update" 
-on public.subscriptions for update 
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
-
-create policy "Pengaruh data mandiri pengguna - Delete" 
-on public.subscriptions for delete 
-using (auth.uid() = user_id);
-
--- 5. Trigger Otomatis untuk memperbarui kolom updated_at server
+-- Trigger Otomatis Pembaruan stempel waktu updated_at
 create or replace function public.update_modified_column()
 returns trigger as $$
 begin
