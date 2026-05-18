@@ -16,6 +16,7 @@ sealed interface AuthState {
     object Idle : AuthState
     object Loading : AuthState
     object Authenticated : AuthState
+    object ChangePasswordSuccess : AuthState
     data class Error(val message: String) : AuthState
 }
 
@@ -34,7 +35,6 @@ class AuthViewModel @Inject constructor(
         checkSession()
     }
 
-    // Memeriksa apakah ada sesi aktif yang tersimpan (Bypass untuk User Lama)
     private fun checkSession() {
         viewModelScope.launch {
             try {
@@ -46,7 +46,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // Fungsi Register menggunakan Email & Password
     fun register(emailInput: String, passwordInput: String) {
         _authState.value = AuthState.Loading
         viewModelScope.launch {
@@ -63,7 +62,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // Fungsi Login menggunakan Email & Password
     fun login(emailInput: String, passwordInput: String) {
         _authState.value = AuthState.Loading
         viewModelScope.launch {
@@ -79,7 +77,21 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
-    
+
+    fun changePassword(newPassword: String) {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            try {
+                supabaseClient.auth.updateUser {
+                    password = newPassword
+                }
+                _authState.value = AuthState.ChangePasswordSuccess
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.localizedMessage ?: "Gagal mengubah password")
+            }
+        }
+    }
+
     fun resetState() {
         _authState.value = AuthState.Idle
     }

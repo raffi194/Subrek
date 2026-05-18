@@ -13,8 +13,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.subrek.core.utils.UiState
-import com.example.subrek.features.auth.presentation.viewmodel.AuthViewModel
+import com.example.subrek.features.auth.presentation.AuthViewModel
+import com.example.subrek.features.auth.presentation.AuthState
 
 @Composable
 fun LoginScreen(
@@ -80,18 +80,18 @@ fun LoginScreen(
             }
 
             // State Handler
-            when (authState) {
-                is UiState.Error -> {
+            when (val currentState = authState) {
+                is AuthState.Error -> {
                     Text(
-                        text = (authState as UiState.Error).message,
+                        text = currentState.message,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                is UiState.Success -> {
+                AuthState.Authenticated -> {
                     LaunchedEffect(Unit) { onLoginSuccess() }
                 }
-                UiState.Loading -> {
+                AuthState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
                 else -> {}

@@ -399,3 +399,24 @@ ALTER TABLE public.subscriptions
 ADD CONSTRAINT check_price_non_negative CHECK (price >= 0);
 END IF;
 END $$;
+
+-- =========================================================================
+-- TAMBAHAN: SUPABASE AUTH - UBAH PASSWORD (CHANGE PASSWORD)
+-- =========================================================================
+-- Catatan: Ubah password dilakukan via Supabase Auth SDK (supabaseClient.auth.updateUser)
+-- dari sisi Android client. Tidak memerlukan fungsi SQL khusus karena Supabase Auth
+-- menangani enkripsi password secara otomatis di sisi server.
+-- Fungsi di bawah ini hanya sebagai referensi audit log perubahan profil.
+
+CREATE OR REPLACE FUNCTION public.log_password_change(target_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    INSERT INTO public.notification_logs (user_id, title, message, activity_type)
+    VALUES (
+        target_user_id,
+        'Password Diubah',
+        'Password akun Anda berhasil diperbarui.',
+        'SECURITY_ALERT'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

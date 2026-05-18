@@ -14,18 +14,24 @@ import androidx.compose.ui.unit.dp
 import com.example.subrek.features.auth.presentation.AuthState
 import com.example.subrek.features.auth.presentation.AuthViewModel
 
+private enum class AuthMode { LOGIN, REGISTER, CHANGE_PASSWORD }
+
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
     onAuthSuccess: () -> Unit
 ) {
-    var isRegisterMode by remember { mutableStateOf(false) }
+    var authMode by remember { mutableStateOf(AuthMode.LOGIN) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmNewPassword by remember { mutableStateOf("") }
 
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var newPasswordVisible by remember { mutableStateOf(false) }
+    var confirmNewPasswordVisible by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsState()
 
@@ -38,59 +44,116 @@ fun AuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars) // Otomatis mengamankan Status Bar & Navigation Bar
-            .padding(24.dp), // Tailwind spacing utilitas
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isRegisterMode) "Buat Akun Baru" else "Selamat Datang Kembali",
+            text = when (authMode) {
+                AuthMode.LOGIN -> "Selamat Datang Kembali"
+                AuthMode.REGISTER -> "Buat Akun Baru"
+                AuthMode.CHANGE_PASSWORD -> "Ubah Password"
+            },
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Field Email
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+        when (authMode) {
+            AuthMode.LOGIN -> {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, "Toggle")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        // Field Password dengan Toggle Visibility
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle Password")
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+            AuthMode.REGISTER -> {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, "Toggle")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Konfirmasi Password") },
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, "Toggle")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        // Field Konfirmasi Password (Hanya muncul saat Register Mode)
-        if (isRegisterMode) {
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Konfirmasi Password") },
-                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(imageVector = image, contentDescription = "Toggle Confirm Password")
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+            AuthMode.CHANGE_PASSWORD -> {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email Akun") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("Password Baru") },
+                    visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                            Icon(if (newPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, "Toggle")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirmNewPassword,
+                    onValueChange = { confirmNewPassword = it },
+                    label = { Text("Konfirmasi Password Baru") },
+                    visualTransformation = if (confirmNewPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmNewPasswordVisible = !confirmNewPasswordVisible }) {
+                            Icon(if (confirmNewPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, "Toggle")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (authState is AuthState.Error) {
             Text(
@@ -100,15 +163,24 @@ fun AuthScreen(
             )
         }
 
-        // Action Button
+        if (authState is AuthState.ChangePasswordSuccess) {
+            Text(
+                text = "Password berhasil diubah! Silakan login kembali.",
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         Button(
             onClick = {
-                if (isRegisterMode) {
-                    if (password == confirmPassword) {
-                        viewModel.register(email, password)
+                when (authMode) {
+                    AuthMode.LOGIN -> viewModel.login(email, password)
+                    AuthMode.REGISTER -> {
+                        if (password == confirmPassword) viewModel.register(email, password)
                     }
-                } else {
-                    viewModel.login(email, password)
+                    AuthMode.CHANGE_PASSWORD -> {
+                        if (newPassword == confirmNewPassword) viewModel.changePassword(newPassword)
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -117,15 +189,35 @@ fun AuthScreen(
             if (authState is AuthState.Loading) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
             } else {
-                Text(if (isRegisterMode) "Register" else "Login")
+                Text(when (authMode) {
+                    AuthMode.LOGIN -> "Login"
+                    AuthMode.REGISTER -> "Register"
+                    AuthMode.CHANGE_PASSWORD -> "Ubah Password"
+                })
             }
         }
 
-        // Switch Mode Link
-        TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
-            Text(
-                text = if (isRegisterMode) "Sudah punya akun? Login disini" else "Belum punya akun? Register disini"
-            )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        when (authMode) {
+            AuthMode.LOGIN -> {
+                TextButton(onClick = { authMode = AuthMode.REGISTER; viewModel.resetState() }) {
+                    Text("Belum punya akun? Register disini")
+                }
+                TextButton(onClick = { authMode = AuthMode.CHANGE_PASSWORD; viewModel.resetState() }) {
+                    Text("Lupa / Ubah Password")
+                }
+            }
+            AuthMode.REGISTER -> {
+                TextButton(onClick = { authMode = AuthMode.LOGIN; viewModel.resetState() }) {
+                    Text("Sudah punya akun? Login disini")
+                }
+            }
+            AuthMode.CHANGE_PASSWORD -> {
+                TextButton(onClick = { authMode = AuthMode.LOGIN; viewModel.resetState() }) {
+                    Text("Kembali ke Login")
+                }
+            }
         }
     }
 }
