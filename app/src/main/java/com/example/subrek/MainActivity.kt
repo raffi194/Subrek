@@ -43,13 +43,13 @@ class MainActivity : ComponentActivity() {
                 val startDestination = remember(onboardingState.isOnboardingCompleted, currentUserId) {
                     when {
                         currentUserId != null -> Screen.Dashboard.route
-                        onboardingState.isOnboardingCompleted -> Screen.Login.route
+                        onboardingState.isOnboardingCompleted -> Screen.Auth.route
                         else -> Screen.Onboarding.route
                     }
                 }
 
-                // Tampilkan splash/loading jika data belum siap (opsional, tapi di sini langsung render)
-                MainNavigation(startDestination = startDestination)
+// Tampilkan splash/loading jika data belum siap (opsional, tapi di sini langsung render)
+                MainNavigation()
             }
         }
     }

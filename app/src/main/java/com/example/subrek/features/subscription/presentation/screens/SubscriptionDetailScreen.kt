@@ -1,0 +1,208 @@
+package com.example.subrek.features.subscription.presentation.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.subrek.features.subscription.presentation.viewmodel.SubscriptionDetailViewModel
+import java.time.format.DateTimeFormatter
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SubscriptionDetailScreen(
+    viewModel: SubscriptionDetailViewModel,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+
+    // State form internal
+    var priceInput by remember { mutableStateOf("") }
+    var selectedCycle by remember { mutableStateOf("MONTHLY") }
+    var startDateInput by remember { mutableStateOf("") }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Sinkronisasi data awal saat entitas berhasil dimuat dari DB
+    LaunchedEffect(uiState.subscription) {
+        uiState.subscription?.let {
+            priceInput = it.price.toInt().toString()
+            selectedCycle = it.billingCycle.name
+            startDateInput = it.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        }
+    }
+
+    // Aksi otomatis jika operasi mutasi berhasil dieksekusi
+    if (uiState.isUpdateSuccess || uiState.isTerminationSuccess) {
+        LaunchedEffect(Unit) { onNavigateBack() }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Detail Langganan", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
+        },
+        modifier = modifier.statusBarsPadding()
+    ) { paddingValues ->
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else uiState.subscription?.let { sub ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 1. AREA METADATA UTAMA (ICON & NAMA)
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = "https://placeholder.co/100", // Icon URL not in domain model yet, using placeholder
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = sub.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                                Icon(imageVector = Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color.Gray)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "Metadata sistem bawaan (Kunci)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
+
+                // 2. LOGIKA PENGEDITAN FORM
+                // Field 1: Nama Aplikasi (Locked - Read Only)
+                OutlinedTextField(
+                    value = sub.name,
+                    onValueChange = {},
+                    label = { Text("Nama Aplikasi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Terkunci") },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.LightGray, unfocusedBorderColor = Color.LightGray)
+                )
+
+                // Field 2: Biaya / Harga (Editable)
+                OutlinedTextField(
+                    value = priceInput,
+                    onValueChange = { priceInput = it },
+                    label = { Text("Total Biaya (Rp)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                // Field 3: Periode Subscriptions / Billing Cycle (Editable Dropdown)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ExposedDropdownMenuBox(
+                        expanded = isDropdownExpanded,
+                        onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCycle,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Periode Penagihan") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = isDropdownExpanded,
+                            onDismissRequest = { isDropdownExpanded = false }
+                        ) {
+                            listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { cycle ->
+                                DropdownMenuItem(
+                                    text = { Text(cycle) },
+                                    onClick = {
+                                        selectedCycle = cycle
+                                        isDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Field 4: Tanggal Mulai Penagihan (Editable)
+                OutlinedTextField(
+                    value = startDateInput,
+                    onValueChange = { startDateInput = it },
+                    label = { Text("Tanggal Mulai Penagihan (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 3. SELEKSI AKSI FINSIAL BUTTONS
+                // Button Aksi Simpan Perubahan Detail
+                Button(
+                    onClick = {
+                        val finalPrice = priceInput.toDoubleOrNull() ?: 0.0
+                        viewModel.updateBillingDetails(finalPrice, selectedCycle, startDateInput)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
+                }
+
+                // Button "Akhiri Langganan" di bagian paling bawah halaman
+                OutlinedButton(
+                    onClick = { viewModel.terminateSubscriptionService() },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(brush = androidx.compose.ui.graphics.SolidColor(Color.Red))
+                ) {
+                    Text("Akhiri Langganan", fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}

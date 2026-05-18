@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Supabase Remote Backend Engine
     implementation(libs.supabaseKt)
     implementation(libs.supabasePostgrest)

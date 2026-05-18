@@ -4,73 +4,79 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.dashboard.domain.model.DashboardStats
-import com.example.subrek.features.dashboard.domain.repository.DashboardRepository
-import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
-import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.dashboard.domain.usecase.GetDashboardStatsUseCase
+import com.example.subrek.features.subscription.domain.model.Subscription
+import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class SortOption { NAME, PRICE_DESC, NEXT_PAYMENT }
-
 data class DashboardUiState(
+    val rawSubscriptions: List<Subscription> = emptyList(),
+    val subscriptionsList: List<Subscription> = emptyList(),
     val statsState: UiState<DashboardStats> = UiState.Loading,
-    val subscriptionsList: List<Subscription> = emptyList(), // List untuk List View (Bisa Ter-filter)
-    val rawSubscriptions: List<Subscription> = emptyList(),   // List Utuh Asli (Untuk Komponen Grafik Chart)
     val selectedCategory: String = "Semua",
-    val currentSortOption: SortOption = SortOption.NEXT_PAYMENT
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val subscriptionRepository: SubscriptionRepository,
-    private val dashboardRepository: DashboardRepository,
+    private val repository: SubscriptionRepository,
     private val getDashboardStatsUseCase: GetDashboardStatsUseCase
 ) : ViewModel() {
 
-    private val _selectedCategory = MutableStateFlow("Semua")
-    private val _currentSortOption = MutableStateFlow(SortOption.NEXT_PAYMENT)
+    private val _uiState = MutableStateFlow(DashboardUiState())
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    val uiState: StateFlow<DashboardUiState> = combine(
-        subscriptionRepository.getAllSubscriptions(),
-        _selectedCategory,
-        _currentSortOption
-    ) { subs, category, sortOption ->
-        
-        val stats = getDashboardStatsUseCase(subs)
+    init {
+        loadDashboardData()
+    }
 
-        var filteredList = subs
-        if (category != "Semua") {
-            filteredList = filteredList.filter { it.category == category }
+    private fun loadDashboardData() {
+        viewModelScope.launch {
+            repository.getAllSubscriptions()
+                .onStart { _uiState.update { it.copy(isLoading = true) } }
+                .catch { error ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = error.localizedMessage) }
+                }
+                .collect { subs ->
+                    val stats = getDashboardStatsUseCase(subs)
+                    _uiState.update { it.copy(
+                        rawSubscriptions = subs,
+                        statsState = UiState.Success(stats),
+                        isLoading = false
+                    ) }
+                    applyFilter()
+                }
         }
+    }
 
-        filteredList = when (sortOption) {
-            SortOption.NAME -> filteredList.sortedBy { it.name.lowercase() }
-            SortOption.PRICE_DESC -> filteredList.sortedByDescending { it.price }
-            SortOption.NEXT_PAYMENT -> filteredList.sortedBy { it.nextPaymentDate }
+    fun changeCategoryFilter(category: String) {
+        _uiState.update { it.copy(selectedCategory = category) }
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        val current = _uiState.value
+        val filtered = if (current.selectedCategory == "Semua") {
+            current.rawSubscriptions
+        } else {
+            current.rawSubscriptions.filter { it.category == current.selectedCategory }
         }
+        _uiState.update { it.copy(subscriptionsList = filtered) }
+    }
 
-        DashboardUiState(
-            statsState = UiState.Success(stats),
-            subscriptionsList = filteredList,
-            rawSubscriptions = subs, // Menyimpan list utuh untuk validasi chart >= 2 data
-            selectedCategory = category,
-            currentSortOption = sortOption
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DashboardUiState()
-    )
-
-    fun changeCategoryFilter(category: String) { _selectedCategory.value = category }
-    fun changeSortOption(option: SortOption) { _currentSortOption.value = option }
+    fun deleteSubscription(subscriptionId: String) {
+        viewModelScope.launch {
+            repository.deleteSubscriptionFromLocalAndRemote(subscriptionId)
+        }
+    }
 
     fun triggerSync() {
         viewModelScope.launch {
-            subscriptionRepository.syncWithRemote()
+            repository.syncWithRemote()
         }
     }
 }

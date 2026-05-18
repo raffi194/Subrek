@@ -28,6 +28,20 @@ interface SubscriptionDao {
     suspend fun getDirtySubscriptions(): List<SubscriptionEntity>
 
     @Query("""
+        SELECT COALESCE(AVG(
+            CASE 
+                WHEN billing_cycle = 'WEEKLY' THEN price * 4.33
+                WHEN billing_cycle = 'YEARLY' THEN price / 12.0
+                ELSE price
+            END
+        ), 0.0) FROM subscriptions WHERE status = 'ACTIVE'
+    """)
+    fun getAverageMonthlyConsumption(): Flow<Double>
+
+    @Query("SELECT * FROM subscriptions WHERE status = 'ENDED'")
+    fun getSubscriptionHistory(): Flow<List<SubscriptionEntity>>
+
+    @Query("""
         SELECT * FROM subscriptions 
         WHERE status IN ('ACTIVE', 'TRIAL') 
         AND date(next_payment_date) = date(:targetDate)
@@ -44,4 +58,29 @@ interface SubscriptionDao {
     // Statistik: Total pengeluaran bulanan (estimasi)
     @Query("SELECT SUM(price) FROM subscriptions WHERE status IN ('ACTIVE', 'TRIAL')")
     fun getTotalMonthlyExpense(): Flow<Double?>
+    @Query("SELECT * FROM subscriptions WHERE id = :id LIMIT 1")
+    fun getSubscriptionByIdFlow(id: String): Flow<SubscriptionEntity?>
+
+    @Query("""
+        UPDATE subscriptions 
+        SET price = :price, billing_cycle = :billingCycle, start_date = :startDate 
+        WHERE id = :id AND status = 'ACTIVE'
+    """)
+    suspend fun updateSubscriptionBilling(id: String, price: Double, billingCycle: String, startDate: String)
+
+    @Query("UPDATE subscriptions SET status = 'ENDED' WHERE id = :id")
+    suspend fun terminateSubscription(id: String)
+
+    // --- Tambahan Step 5.4 ---
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategory(category: LocalCategoryEntity)
+
+    @Query("SELECT * FROM local_categories")
+    fun getCustomCategories(): Flow<List<LocalCategoryEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomApp(app: LocalAppEntity)
+
+    @Query("SELECT * FROM local_apps")
+    fun getCustomApps(): Flow<List<LocalAppEntity>>
 }

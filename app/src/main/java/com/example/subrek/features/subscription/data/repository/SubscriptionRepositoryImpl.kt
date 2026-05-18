@@ -104,4 +104,155 @@ class SubscriptionRepositoryImpl @Inject constructor(
     override fun getTotalMonthlyExpense(): Flow<Double> {
         return subscriptionDao.getTotalMonthlyExpense().map { it ?: 0.0 }
     }
+
+    override fun getActiveSubscriptions(): Flow<List<Subscription>> {
+        return subscriptionDao.getAllSubscriptions().map { entities ->
+            entities.filter { it.status == "ACTIVE" || it.status == "TRIAL" }.map { it.toDomain() }
+        }
+    }
+
+    override fun getSubscriptionHistory(): Flow<List<Subscription>> {
+        return subscriptionDao.getSubscriptionHistory().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getAverageConsumption(): Flow<Double> {
+        return subscriptionDao.getAverageMonthlyConsumption()
+    }
+
+    override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {
+        // 1. Hapus di lokal
+        subscriptionDao.deleteSubscriptionById(id)
+        
+        // 2. Hapus di remote
+        try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id
+            if (userId != null) {
+                supabaseClient.postgrest["subscriptions"].delete {
+                    filter {
+                        eq("id", id)
+                        eq("user_id", userId)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Jika gagal remote, kita biarkan saja dulu karena sudah terhapus di lokal
+            // Idealnya ada mekanisme sync delete
+        }
+    }
+
+    override fun getSubscriptionByIdFlow(id: String): Flow<Subscription?> {
+        return subscriptionDao.getSubscriptionByIdFlow(id).map { it?.toDomain() }
+    }
+
+    override suspend fun updateSubscriptionBilling(
+        id: String,
+        price: Double,
+        billingCycle: String,
+        startDate: String
+    ) {
+        // Update lokal
+        subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
+        
+        // Update remote (Push update)
+        try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id
+            if (userId != null) {
+                supabaseClient.postgrest["subscriptions"].update(
+                    {
+                        set("price", price)
+                        set("billing_cycle", billingCycle)
+                        set("start_date", startDate)
+                        set("updated_at", "now()")
+                    }
+                ) {
+                    filter {
+                        eq("id", id)
+                        eq("user_id", userId)
+                        eq("status", "ACTIVE")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override suspend fun terminateSubscription(id: String) {
+        // Update lokal
+        subscriptionDao.terminateSubscription(id)
+
+        // Update remote
+        try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id
+            if (userId != null) {
+                supabaseClient.postgrest["subscriptions"].update(
+                    {
+                        set("status", "ENDED")
+                        set("updated_at", "now()")
+                    }
+                ) {
+                    filter {
+                        eq("id", id)
+                        eq("user_id", userId)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // --- Implementation Step 5.4 ---
+
+    override suspend fun insertCategory(category: com.example.subrek.features.subscription.data.local.LocalCategoryEntity) {
+        subscriptionDao.insertCategory(category)
+        // Note: Remote sync for custom categories could be added here similar to subscriptions
+    }
+
+    override fun getCustomCategories(): Flow<List<com.example.subrek.features.subscription.data.local.LocalCategoryEntity>> {
+        return subscriptionDao.getCustomCategories()
+    }
+
+    override suspend fun insertCustomApp(app: com.example.subrek.features.subscription.data.local.LocalAppEntity) {
+        subscriptionDao.insertCustomApp(app)
+        // Note: Remote sync for custom apps could be added here
+    }
+
+    override fun getCustomApps(): Flow<List<com.example.subrek.features.subscription.data.local.LocalAppEntity>> {
+        return subscriptionDao.getCustomApps()
+    }
+
+    override suspend fun saveSubscription(
+        name: String,
+        iconUrl: String?,
+        price: Double,
+        cycle: String,
+        date: String,
+        isTrial: Boolean
+    ) {
+        val id = java.util.UUID.randomUUID().toString()
+        val status = if (isTrial) "TRIAL" else "ACTIVE"
+        val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
+            id = id,
+            name = name,
+            price = price,
+            currency = "IDR",
+            billingCycle = com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(cycle),
+            startDate = LocalDate.parse(date),
+            nextPaymentDate = LocalDate.parse(date), // Simplification: next payment is start date for now
+            category = "Other",
+            paymentMethod = "Manual",
+            isTrial = isTrial,
+            status = com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status),
+            createdAt = LocalDate.now(),
+            updatedAt = LocalDate.now()
+        )
+        insertSubscription(subscription)
+    }
 }

@@ -49,4 +49,25 @@ interface SubscriptionRepository {
      * Mengambil estimasi total pengeluaran bulanan.
      */
     fun getTotalMonthlyExpense(): Flow<Double>
+
+    fun getActiveSubscriptions(): Flow<List<Subscription>>
+
+    fun getSubscriptionHistory(): Flow<List<Subscription>>
+
+    fun getAverageConsumption(): Flow<Double>
+
+    suspend fun deleteSubscriptionFromLocalAndRemote(id: String)
+
+    fun getSubscriptionByIdFlow(id: String): Flow<Subscription?>
+
+    suspend fun updateSubscriptionBilling(id: String, price: Double, billingCycle: String, startDate: String)
+
+    suspend fun terminateSubscription(id: String)
+
+    // --- Tambahan Step 5.4 ---
+    suspend fun insertCategory(category: com.example.subrek.features.subscription.data.local.LocalCategoryEntity)
+    fun getCustomCategories(): Flow<List<com.example.subrek.features.subscription.data.local.LocalCategoryEntity>>
+    suspend fun insertCustomApp(app: com.example.subrek.features.subscription.data.local.LocalAppEntity)
+    fun getCustomApps(): Flow<List<com.example.subrek.features.subscription.data.local.LocalAppEntity>>
+    suspend fun saveSubscription(name: String, iconUrl: String?, price: Double, cycle: String, date: String, isTrial: Boolean)
 }
