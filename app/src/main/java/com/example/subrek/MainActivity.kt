@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.subrek.core.theme.SubrekTheme
+import com.example.subrek.features.onboarding.presentation.viewmodel.OnboardingViewModel
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,12 +25,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SubrekTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val onboardingViewModel: OnboardingViewModel = hiltViewModel()
+                val onboardingState by onboardingViewModel.uiState.collectAsState()
+                
+                // Cek status pertama kali untuk menentukan startDestination
+                val startDestination = if (onboardingState.isOnboardingCompleted) {
+                    Screen.Dashboard.route
+                } else {
+                    Screen.Onboarding.route
                 }
+
+                MainNavigation(startDestination = startDestination)
             }
         }
     }
@@ -39,12 +47,4 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         text = "Hello $name!",
         modifier = modifier
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SubrekTheme {
-        Greeting("Android")
-    }
 }

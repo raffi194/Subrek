@@ -1,6 +1,7 @@
 package com.example.subrek.core.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.Room
 import com.example.subrek.features.subscription.data.local.AppDatabase
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
@@ -30,6 +31,14 @@ object AppModule {
             install(Postgrest)
             install(Auth)
         }
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(
+        @ApplicationContext context: Context
+    ): SharedPreferences {
+        return context.getSharedPreferences("subrek_prefs", Context.MODE_PRIVATE)
     }
 
     @Provides
