@@ -340,3 +340,62 @@ BEGIN
         ADD CONSTRAINT check_user_apps_name_not_empty CHECK (length(trim(name)) > 0);
     END IF;
 END $$;
+
+-- =========================================================================
+-- SINKRONISASI AKHIR KUMULATIF: MEMASTIKAN KESUKSESAN MULTI-TENANT & CRUD 100%
+-- =========================================================================
+
+-- 1. Inisialisasi Tabel Riwayat Log Aktivitas Notifikasi (Mendukung Tombol Lonceng Homepage)
+CREATE TABLE IF NOT EXISTS public.notification_logs (
+id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+title TEXT NOT NULL,
+message TEXT NOT NULL,
+activity_type TEXT NOT NULL, -- 'PAYMENT_REMINDER', 'SUBS_TERMINATED', 'COST_ALERT'
+created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 2. Mengaktifkan Row Level Security (RLS) pada Tabel Log Aktivitas
+ALTER TABLE public.notification_logs ENABLE ROW LEVEL SECURITY;
+
+-- 3. Kebijakan Keamanan RLS Multi-Tenant Terisolasi (Mencegah Kebocoran Data Antar-User)
+DO $$
+BEGIN
+IF NOT EXISTS (
+SELECT 1 FROM pg_policies
+WHERE tablename = 'notification_logs' AND policyname = 'User hanya bisa membaca log miliknya sendiri'
+) THEN
+CREATE POLICY "User hanya bisa membaca log miliknya sendiri"
+ON public.notification_logs
+FOR SELECT USING (auth.uid() = user_id);
+END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'notification_logs' AND policyname = 'User bisa menghapus log aktivitas sendiri'
+    ) THEN
+        CREATE POLICY "User bisa menghapus log aktivitas sendiri" 
+        ON public.notification_logs
+        FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'notification_logs' AND policyname = 'Sistem bisa mencatat aktivitas baru'
+    ) THEN
+        CREATE POLICY "Sistem bisa mencatat aktivitas baru" 
+        ON public.notification_logs
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- 4. Validasi Pengaman Integritas Nilai Finansial (Fase 6.2)
+DO $$
+BEGIN
+IF NOT EXISTS (
+SELECT 1 FROM pg_constraint WHERE conname = 'check_price_non_negative'
+) THEN
+ALTER TABLE public.subscriptions
+ADD CONSTRAINT check_price_non_negative CHECK (price >= 0);
+END IF;
+END $$;
