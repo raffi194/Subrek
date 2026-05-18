@@ -36,4 +36,12 @@ interface SubscriptionDao {
 
     @Query("UPDATE subscriptions SET status = 'NEEDS_REVIEW' WHERE id = :id")
     suspend fun markAsNeedsReview(id: String)
+
+    // Ghost Detector: Ambil langganan yang unconfirmedCyclesCount >= 2
+    @Query("SELECT * FROM subscriptions WHERE unconfirmed_cycles_count >= 2 AND status != 'NEEDS_REVIEW'")
+    suspend fun getGhostSubscriptions(): List<SubscriptionEntity>
+
+    // Statistik: Total pengeluaran bulanan (estimasi)
+    @Query("SELECT SUM(price) FROM subscriptions WHERE status IN ('ACTIVE', 'TRIAL')")
+    fun getTotalMonthlyExpense(): Flow<Double?>
 }

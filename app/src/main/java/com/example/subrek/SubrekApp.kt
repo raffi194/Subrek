@@ -17,21 +17,24 @@ class SubrekApp : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(android.util.Log.INFO)
             .build()
 
     override fun onCreate() {
         super.onCreate()
-        setupDailyNotificationWorker()
+        try {
+            setupDailyNotificationWorker()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun setupDailyNotificationWorker() {
-        // KONFIGURASI BATASAN: Berjalan hanya saat perangkat charging / idle (Efisien Baterai)
         val constraints = Constraints.Builder()
-            .setRequiresCharging(true)
-            .setRequiresDeviceIdle(true)
+            .setRequiresCharging(false)
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
             .build()
 
-        // PENJADWALAN PERIODIK: Berulang setiap 24 Jam sekali secara teratur
         val dailyWorkRequest = PeriodicWorkRequestBuilder<NotificationWorker>(24, TimeUnit.HOURS)
             .setConstraints(constraints)
             .setBackoffCriteria(
@@ -41,7 +44,6 @@ class SubrekApp : Application(), Configuration.Provider {
             )
             .build()
 
-        // DEDUPLIKASI UNIK: Menggunakan kebijakan KEEP agar tidak menumpuk task ganda dalam sehari
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "SubrekDailyBillingJob",
             ExistingPeriodicWorkPolicy.KEEP,

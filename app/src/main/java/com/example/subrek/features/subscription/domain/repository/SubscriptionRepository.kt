@@ -38,4 +38,14 @@ interface SubscriptionRepository {
      * Mengambil daftar langganan yang akan jatuh tempo dalam jumlah hari tertentu.
      */
     suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription>
+
+    /**
+     * Mengambil daftar langganan yang terdeteksi sebagai "Ghost Subscription" (tidak dikonfirmasi >= 2 siklus).
+     */
+    suspend fun getGhostSubscriptions(): List<Subscription>
+
+    /**
+     * Mengambil estimasi total pengeluaran bulanan.
+     */
+    fun getTotalMonthlyExpense(): Flow<Double>
 }

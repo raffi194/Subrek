@@ -96,4 +96,12 @@ class SubscriptionRepositoryImpl @Inject constructor(
             it.toDomain()
         }
     }
+
+    override suspend fun getGhostSubscriptions(): List<Subscription> {
+        return subscriptionDao.getGhostSubscriptions().map { it.toDomain() }
+    }
+
+    override fun getTotalMonthlyExpense(): Flow<Double> {
+        return subscriptionDao.getTotalMonthlyExpense().map { it ?: 0.0 }
+    }
 }
