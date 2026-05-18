@@ -38,7 +38,8 @@ fun AuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .windowInsetsPadding(WindowInsets.systemBars) // Otomatis mengamankan Status Bar & Navigation Bar
+            .padding(24.dp), // Tailwind spacing utilitas
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

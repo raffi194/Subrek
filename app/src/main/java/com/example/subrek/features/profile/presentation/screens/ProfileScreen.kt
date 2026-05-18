@@ -54,13 +54,14 @@ fun ProfileScreen(
                 title = { Text("Profil Saya", fontWeight = FontWeight.Bold) }
             )
         },
-        modifier = modifier.statusBarsPadding()
+        contentWindowInsets = WindowInsets.statusBars
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))

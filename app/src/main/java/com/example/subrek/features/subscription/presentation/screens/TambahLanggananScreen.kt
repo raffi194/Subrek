@@ -64,13 +64,14 @@ fun TambahLanggananScreen(
                 }
             )
         },
-        modifier = modifier.statusBarsPadding()
+        contentWindowInsets = WindowInsets.statusBars
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
+                .navigationBarsPadding()
         ) {
             if (selectedAppForForm == null) {
                 // 1. SEARCH FIELD

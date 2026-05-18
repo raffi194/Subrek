@@ -31,24 +31,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SubrekTheme {
-                val onboardingViewModel: OnboardingViewModel = hiltViewModel()
-                val onboardingState by onboardingViewModel.uiState.collectAsState()
-                
-                // Observe current session
-                val currentUserId by checkAuthSessionUseCase().collectAsState(initial = null)
-                
-                // Logika Alur Masuk (Sesi) sesuai Step 4.3:
-                // 1. User Lama (Sudah Login): Bypass ke Homepage
-                // 2. User Baru: Onboarding -> Register/Login
-                val startDestination = remember(onboardingState.isOnboardingCompleted, currentUserId) {
-                    when {
-                        currentUserId != null -> Screen.Dashboard.route
-                        onboardingState.isOnboardingCompleted -> Screen.Auth.route
-                        else -> Screen.Onboarding.route
-                    }
-                }
-
-// Tampilkan splash/loading jika data belum siap (opsional, tapi di sini langsung render)
                 MainNavigation()
             }
         }

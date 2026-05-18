@@ -32,6 +32,8 @@ fun LoginScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {

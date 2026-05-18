@@ -44,13 +44,15 @@ fun SubscriptionListScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Langganan")
             }
-        }
+        },
+        contentWindowInsets = WindowInsets.statusBars
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Slate950)
                 .padding(paddingValues)
+                .navigationBarsPadding()
         ) {
             when (state) {
                 is UiState.Loading -> {

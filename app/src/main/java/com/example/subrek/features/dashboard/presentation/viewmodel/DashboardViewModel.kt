@@ -17,6 +17,8 @@ data class DashboardUiState(
     val subscriptionsList: List<Subscription> = emptyList(),
     val statsState: UiState<DashboardStats> = UiState.Loading,
     val selectedCategory: String = "Semua",
+    val userName: String = "User",
+    val userAvatarUrl: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

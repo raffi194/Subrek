@@ -57,14 +57,16 @@ fun DashboardScreen(
             FloatingActionButton(onClick = onNavigateToAddSubscription, containerColor = Blue600, contentColor = MaterialTheme.colorScheme.onPrimary) {
                 Icon(Icons.Default.Add, "Tambah")
             }
-        }
+        },
+        contentWindowInsets = WindowInsets.statusBars
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Slate950)
                 .padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             // 1. KARTU ESTIMASI RINGKASAN IDR UTAMA ATAS
             item {

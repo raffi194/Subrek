@@ -217,3 +217,126 @@ CREATE POLICY "Pengguna dapat memperbarui avatar mereka sendiri" ON storage.obje
 
 CREATE POLICY "Avatar dapat dilihat oleh publik" ON storage.objects
     FOR SELECT USING (bucket_id = 'avatars');
+
+-- =========================================================================
+-- TAMBAHAN SECARA KUMULATIF: MELENGKAPI KEKURANGAN CRUD & RLS FASE 5
+-- =========================================================================
+
+-- -------------------------------------------------------------------------
+-- PERBAIKAN 1: Melengkapi Policy INSERT untuk Katalog Kustom (Step 5.4)
+-- -------------------------------------------------------------------------
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_categories' AND policyname = 'User hanya bisa menambah kategori kustom miliknya'
+    ) THEN
+        CREATE POLICY "User hanya bisa menambah kategori kustom miliknya" 
+        ON public.user_categories
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_apps' AND policyname = 'User hanya bisa menambah aplikasi kustom miliknya'
+    ) THEN
+        CREATE POLICY "User hanya bisa menambah aplikasi kustom miliknya" 
+        ON public.user_apps
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+
+-- -------------------------------------------------------------------------
+-- PERBAIKAN 2: Melengkapi Policy INSERT untuk Tabel Profiles (Step 5.5)
+-- -------------------------------------------------------------------------
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'profiles' AND policyname = 'Pengguna dapat membuat profil sendiri'
+    ) THEN
+        CREATE POLICY "Pengguna dapat membuat profil sendiri" 
+        ON public.profiles
+        FOR INSERT WITH CHECK (auth.uid() = id);
+    END IF;
+END $$;
+
+
+-- -------------------------------------------------------------------------
+-- PERBAIKAN 3: Inisialisasi Tabel & CRUD Log Aktivitas Notifikasi (Step 5.2)
+-- -------------------------------------------------------------------------
+
+-- A. Membuat Tabel Log Aktivitas Notifikasi jika belum ada
+CREATE TABLE IF NOT EXISTS public.notification_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    activity_type TEXT NOT NULL, -- 'PAYMENT_REMINDER', 'SUBS_TERMINATED', 'COST_ALERT'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- B. Mengaktifkan Row Level Security (RLS)
+ALTER TABLE public.notification_logs ENABLE ROW LEVEL SECURITY;
+
+-- C. CRUD - READ: Policy agar user hanya bisa membaca log miliknya sendiri
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'notification_logs' AND policyname = 'User hanya bisa melihat log aktivitas sendiri'
+    ) THEN
+        CREATE POLICY "User hanya bisa melihat log aktivitas sendiri" 
+        ON public.notification_logs
+        FOR SELECT USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- D. CRUD - CREATE: Policy agar sistem/user bisa mencatat log aktivitas baru
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'notification_logs' AND policyname = 'User/Sistem bisa mencatat log aktivitas baru'
+    ) THEN
+        CREATE POLICY "User/Sistem bisa mencatat log aktivitas baru" 
+        ON public.notification_logs
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- E. CRUD - DELETE: Policy agar user bisa membersihkan/menghapus log aktivitas
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'notification_logs' AND policyname = 'User bisa menghapus log aktivitas sendiri'
+    ) THEN
+        CREATE POLICY "User bisa menghapus log aktivitas sendiri" 
+        ON public.notification_logs
+        FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- =========================================================================
+-- TAMBAHAN SECARA KUMULATIF UNTUK STEP 6.2 (DATABASE CONSTRAINTS VERIFICATION)
+-- =========================================================================
+
+-- Menambahkan check constraint pada tabel subscriptions untuk memvalidasi harga di level database
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'check_price_non_negative'
+    ) THEN
+        ALTER TABLE public.subscriptions 
+        ADD CONSTRAINT check_price_non_negative CHECK (price >= 0);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'check_user_apps_name_not_empty'
+    ) THEN
+        ALTER TABLE public.user_apps 
+        ADD CONSTRAINT check_user_apps_name_not_empty CHECK (length(trim(name)) > 0);
+    END IF;
+END $$;

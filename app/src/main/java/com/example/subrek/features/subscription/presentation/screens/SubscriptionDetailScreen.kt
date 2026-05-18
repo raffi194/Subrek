@@ -63,7 +63,7 @@ fun SubscriptionDetailScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        modifier = modifier.statusBarsPadding()
+        contentWindowInsets = WindowInsets.statusBars
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -75,7 +75,8 @@ fun SubscriptionDetailScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp)
-                    .verticalScroll(scrollState),
+                    .verticalScroll(scrollState)
+                    .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 1. AREA METADATA UTAMA (ICON & NAMA)

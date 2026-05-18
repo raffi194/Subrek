@@ -74,7 +74,8 @@ fun AddSubscriptionScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Slate950)
             )
-        }
+        },
+        contentWindowInsets = WindowInsets.statusBars
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -82,7 +83,8 @@ fun AddSubscriptionScreen(
                 .background(Slate950) // Tailwind Slate950
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Spacer(modifier = Modifier.height(4.dp))
