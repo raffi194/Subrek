@@ -11,15 +11,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.subrek.core.theme.SubrekTheme
+import com.example.subrek.features.auth.domain.usecase.CheckAuthSessionUseCase
 import com.example.subrek.features.onboarding.presentation.viewmodel.OnboardingViewModel
-
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var checkAuthSessionUseCase: CheckAuthSessionUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -28,13 +34,21 @@ class MainActivity : ComponentActivity() {
                 val onboardingViewModel: OnboardingViewModel = hiltViewModel()
                 val onboardingState by onboardingViewModel.uiState.collectAsState()
                 
-                // Cek status pertama kali untuk menentukan startDestination
-                val startDestination = if (onboardingState.isOnboardingCompleted) {
-                    Screen.Dashboard.route
-                } else {
-                    Screen.Onboarding.route
+                // Observe current session
+                val currentUserId by checkAuthSessionUseCase().collectAsState(initial = null)
+                
+                // Logika Alur Masuk (Sesi) sesuai Step 4.3:
+                // 1. User Lama (Sudah Login): Bypass ke Homepage
+                // 2. User Baru: Onboarding -> Register/Login
+                val startDestination = remember(onboardingState.isOnboardingCompleted, currentUserId) {
+                    when {
+                        currentUserId != null -> Screen.Dashboard.route
+                        onboardingState.isOnboardingCompleted -> Screen.Login.route
+                        else -> Screen.Onboarding.route
+                    }
                 }
 
+                // Tampilkan splash/loading jika data belum siap (opsional, tapi di sini langsung render)
                 MainNavigation(startDestination = startDestination)
             }
         }

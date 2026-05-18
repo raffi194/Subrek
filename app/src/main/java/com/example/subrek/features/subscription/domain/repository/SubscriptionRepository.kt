@@ -2,6 +2,7 @@ package com.example.subrek.features.subscription.domain.repository
 
 import com.example.subrek.features.subscription.domain.model.Subscription
 import kotlinx.coroutines.flow.Flow
+import kotlin.Result
 
 /**
  * Kontrak abstraksi repositori untuk fitur langganan.
