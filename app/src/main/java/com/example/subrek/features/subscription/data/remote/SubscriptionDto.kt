@@ -34,6 +34,10 @@ data class SubscriptionDto(
     val isGhostSubscription: Boolean,
     @SerialName("status")
     val status: String,
+    @SerialName("unconfirmed_cycles_count")
+    val unconfirmedCyclesCount: Int = 0,
+    @SerialName("created_at")
+    val createdAt: String,
     @SerialName("updated_at")
     val updatedAt: String? = null
 )

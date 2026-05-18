@@ -5,32 +5,60 @@ import androidx.lifecycle.viewModelScope
 import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.report.domain.model.SubscriptionReport
 import com.example.subrek.features.report.domain.usecase.GetMonthlyReportUseCase
+import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
+import com.example.subrek.features.subscription.domain.usecase.ScanGhostSubscriptionsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ReportUiState(
+    val reportState: UiState<SubscriptionReport> = UiState.Loading,
+    val isYearlyTrend: Boolean = false,
+    val detectedGhostCount: Int = 0
+)
+
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    private val getMonthlyReportUseCase: GetMonthlyReportUseCase
+    private val subscriptionRepository: SubscriptionRepository,
+    private val getMonthlyReportUseCase: GetMonthlyReportUseCase,
+    private val scanGhostSubscriptionsUseCase: ScanGhostSubscriptionsUseCase
 ) : ViewModel() {
 
-    private val _reportState = MutableStateFlow<UiState<SubscriptionReport>>(UiState.Idle)
-    val reportState: StateFlow<UiState<SubscriptionReport>> = _reportState.asStateFlow()
+    private val _isYearlyTrend = MutableStateFlow(false)
+    private val _ghostCount = MutableStateFlow(0)
 
-    fun loadMonthlyReport(month: String) {
+    val uiState: StateFlow<ReportUiState> = combine(
+        subscriptionRepository.getAllSubscriptions(),
+        _isYearlyTrend,
+        _ghostCount
+    ) { subs, isYearly, ghostCount ->
+        
+        // Jalankan kalkulasi agregat laporan tren
+        val report = getMonthlyReportUseCase(subs, isYearly)
+        
+        ReportUiState(
+            reportState = UiState.Success(report),
+            isYearlyTrend = isYearly,
+            detectedGhostCount = ghostCount
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ReportUiState()
+    )
+
+    init {
+        // Otomatis jalankan pemindaian algoritma Ghost Detector saat halaman dibuka
         viewModelScope.launch {
-            _reportState.value = UiState.Loading
-            getMonthlyReportUseCase(month)
-                .catch { e ->
-                    _reportState.value = UiState.Error(e.message ?: "Unknown Error")
-                }
-                .collect { report ->
-                    _reportState.value = UiState.Success(report)
-                }
+            subscriptionRepository.getAllSubscriptions().firstOrNull()?.let { currentSubs ->
+                val detected = scanGhostSubscriptionsUseCase(currentSubs)
+                _ghostCount.value = detected
+            }
         }
+    }
+
+    fun toggleTrendType(isYearly: Boolean) {
+        _isYearlyTrend.value = isYearly
     }
 }

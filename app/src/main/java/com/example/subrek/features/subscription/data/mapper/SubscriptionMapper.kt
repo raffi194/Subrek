@@ -24,7 +24,10 @@ fun SubscriptionEntity.toDomain(): Subscription {
         paymentMethod = paymentMethod,
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
-        status = SubscriptionStatus.valueOf(status)
+        status = SubscriptionStatus.valueOf(status),
+        unconfirmedCyclesCount = unconfirmedCyclesCount,
+        createdAt = LocalDate.parse(createdAt, dateFormatter),
+        updatedAt = LocalDate.now() // Or map from updatedAt long if needed, but domain expects LocalDate
     )
 }
 
@@ -43,6 +46,8 @@ fun Subscription.toEntity(isDirty: Boolean = true): SubscriptionEntity {
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
         status = status.name,
+        unconfirmedCyclesCount = unconfirmedCyclesCount,
+        createdAt = createdAt.format(dateFormatter),
         isDirty = isDirty,
         updatedAt = System.currentTimeMillis()
     )
@@ -63,7 +68,9 @@ fun SubscriptionEntity.toDto(userId: String): SubscriptionDto {
         paymentMethod = paymentMethod,
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
-        status = status
+        status = status,
+        unconfirmedCyclesCount = unconfirmedCyclesCount,
+        createdAt = createdAt
     )
 }
 
@@ -82,6 +89,8 @@ fun SubscriptionDto.toEntity(): SubscriptionEntity {
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
         status = status,
+        unconfirmedCyclesCount = unconfirmedCyclesCount,
+        createdAt = createdAt,
         isDirty = false,
         updatedAt = System.currentTimeMillis()
     )

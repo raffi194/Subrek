@@ -11,9 +11,9 @@ class ReportRepositoryImpl @Inject constructor() : ReportRepository {
         // Implementation for calculating reports from Room or Remote data
         return flowOf(
             SubscriptionReport(
-                month = month,
-                totalExpense = 0.0,
-                categoryBreakdown = emptyMap()
+                totalSpend = 0.0,
+                categoryBreakdown = emptyMap(),
+                trendPoints = emptyMap()
             )
         )
     }

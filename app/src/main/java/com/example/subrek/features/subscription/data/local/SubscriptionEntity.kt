@@ -47,6 +47,12 @@ data class SubscriptionEntity(
     @ColumnInfo(name = "status")
     val status: String, // Mengonversi Enum SubscriptionStatus ke String
 
+    @ColumnInfo(name = "unconfirmed_cycles_count")
+    val unconfirmedCyclesCount: Int = 0,
+
+    @ColumnInfo(name = "created_at")
+    val createdAt: String, // Format: YYYY-MM-DD
+
     @ColumnInfo(name = "is_dirty")
     val isDirty: Boolean = false, // True jika data berubah di lokal dan belum sinkron ke cloud
 

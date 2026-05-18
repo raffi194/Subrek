@@ -33,4 +33,7 @@ interface SubscriptionDao {
         AND date(next_payment_date) = date(:targetDate)
     """)
     suspend fun getSubscriptionsExpiringOn(targetDate: String): List<SubscriptionEntity>
+
+    @Query("UPDATE subscriptions SET status = 'NEEDS_REVIEW' WHERE id = :id")
+    suspend fun markAsNeedsReview(id: String)
 }

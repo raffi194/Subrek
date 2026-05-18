@@ -116,7 +116,9 @@ class AddSubscriptionViewModel @Inject constructor(
                     category = currentState.category,
                     paymentMethod = currentState.paymentMethod,
                     isTrial = currentState.isTrial,
-                    status = if (currentState.isTrial) SubscriptionStatus.TRIAL else SubscriptionStatus.ACTIVE
+                    status = if (currentState.isTrial) SubscriptionStatus.TRIAL else SubscriptionStatus.ACTIVE,
+                    createdAt = LocalDate.now(),
+                    updatedAt = LocalDate.now()
                 )
                 
                 addSubscriptionUseCase(newSub)
