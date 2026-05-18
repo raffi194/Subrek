@@ -33,4 +33,9 @@ interface SubscriptionRepository {
      * Memicu proses sinkronisasi latar belakang antara Room lokal dan cloud Supabase.
      */
     suspend fun syncWithRemote(): Result<Unit>
+
+    /**
+     * Mengambil daftar langganan yang akan jatuh tempo dalam jumlah hari tertentu.
+     */
+    suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription>
 }

@@ -13,6 +13,8 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -83,6 +85,15 @@ class SubscriptionRepositoryImpl @Inject constructor(
             // Arsitektur Offline-First menjamin aplikasi tetap bisa beroperasi menggunakan cache lokal.
             e.printStackTrace()
             Result.failure(e)
+        }
+    }
+
+    override suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription> {
+        val targetLocalDate = LocalDate.now().plusDays(days.toLong())
+        val formattedTarget = targetLocalDate.format(DateTimeFormatter.ISO_LOCAL_DATE) // "YYYY-MM-DD"
+
+        return subscriptionDao.getSubscriptionsExpiringOn(formattedTarget).map {
+            it.toDomain()
         }
     }
 }

@@ -26,4 +26,11 @@ interface SubscriptionDao {
 
     @Query("SELECT * FROM subscriptions WHERE is_dirty = 1")
     suspend fun getDirtySubscriptions(): List<SubscriptionEntity>
+
+    @Query("""
+        SELECT * FROM subscriptions 
+        WHERE status IN ('ACTIVE', 'TRIAL') 
+        AND date(next_payment_date) = date(:targetDate)
+    """)
+    suspend fun getSubscriptionsExpiringOn(targetDate: String): List<SubscriptionEntity>
 }
