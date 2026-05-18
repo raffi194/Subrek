@@ -46,7 +46,10 @@ data class SubscriptionEntity(
     
     @ColumnInfo(name = "status")
     val status: String, // Mengonversi Enum SubscriptionStatus ke String
-    
+
+    @ColumnInfo(name = "is_dirty")
+    val isDirty: Boolean = false, // True jika data berubah di lokal dan belum sinkron ke cloud
+
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis() // Timestamp untuk keperluan validasi sinkronisasi
 )

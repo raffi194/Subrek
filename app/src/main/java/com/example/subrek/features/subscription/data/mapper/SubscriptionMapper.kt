@@ -8,12 +8,7 @@ import com.example.subrek.features.subscription.domain.model.SubscriptionStatus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/**
- * Kumpulan Extension Functions Mapper untuk konversi data tiga arah:
- * Domain Model <-> Room Entity <-> Supabase DTO
- */
-
-private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE // Format: YYYY-MM-DD
+private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
 // 1. Dari Room Entity ke Pure Domain Model
 fun SubscriptionEntity.toDomain(): Subscription {
@@ -33,8 +28,8 @@ fun SubscriptionEntity.toDomain(): Subscription {
     )
 }
 
-// 2. Dari Pure Domain Model ke Room Entity
-fun Subscription.toEntity(): SubscriptionEntity {
+// 2. Dari Pure Domain Model ke Room Entity (Mark as Dirty for local changes)
+fun Subscription.toEntity(isDirty: Boolean = true): SubscriptionEntity {
     return SubscriptionEntity(
         id = id,
         name = name,
@@ -48,6 +43,7 @@ fun Subscription.toEntity(): SubscriptionEntity {
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
         status = status.name,
+        isDirty = isDirty,
         updatedAt = System.currentTimeMillis()
     )
 }
@@ -71,7 +67,7 @@ fun SubscriptionEntity.toDto(userId: String): SubscriptionDto {
     )
 }
 
-// 4. Dari Supabase DTO ke Room Entity
+// 4. Dari Supabase DTO ke Room Entity (Mark as Clean)
 fun SubscriptionDto.toEntity(): SubscriptionEntity {
     return SubscriptionEntity(
         id = id,
@@ -86,6 +82,7 @@ fun SubscriptionDto.toEntity(): SubscriptionEntity {
         isTrial = isTrial,
         isGhostSubscription = isGhostSubscription,
         status = status,
+        isDirty = false,
         updatedAt = System.currentTimeMillis()
     )
 }

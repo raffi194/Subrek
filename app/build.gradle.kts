@@ -4,9 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
-
     alias(libs.plugins.google.ksp)
-
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -72,7 +70,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // Supabase Remote Backend Engine (Menggunakan alias yang valid dari libs.versions.toml)
+    // Supabase Remote Backend Engine
     implementation(libs.supabaseKt)
     implementation(libs.supabasePostgrest)
     implementation(libs.supabaseAuth)

@@ -18,9 +18,12 @@ interface SubscriptionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubscription(subscription: SubscriptionEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSubscriptions(subscriptions: List<SubscriptionEntity>)
+
     @Query("DELETE FROM subscriptions WHERE id = :id")
     suspend fun deleteSubscriptionById(id: String)
 
-    @Query("SELECT * FROM subscriptions WHERE updated_at > :lastSyncTime")
-    suspend fun getDirtySubscriptions(lastSyncTime: Long): List<SubscriptionEntity>
+    @Query("SELECT * FROM subscriptions WHERE is_dirty = 1")
+    suspend fun getDirtySubscriptions(): List<SubscriptionEntity>
 }
