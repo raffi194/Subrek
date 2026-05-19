@@ -125,6 +125,9 @@ fun MainNavigation(
                     viewModel = viewModel,
                     onNavigateToAddSubscription = {
                         navController.navigate(Screen.TambahLangganan.route)
+                    },
+                    onNavigateToDetail = { subscriptionId ->
+                        navController.navigate(Screen.SubscriptionDetail.createRoute(subscriptionId))
                     }
                 )
             }

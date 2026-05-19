@@ -113,15 +113,6 @@ fun DashboardScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Slate950)
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddSubscription,
-                containerColor = Blue600,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, "Tambah")
-            }
-        },
         contentWindowInsets = WindowInsets.statusBars
     ) { paddingValues ->
         LazyColumn(
