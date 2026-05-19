@@ -13,7 +13,6 @@ import java.util.UUID
 import javax.inject.Inject
 
 data class CatalogUiState(
-    val defaultCategories: List<String> = listOf("Popular", "Cineman", "Music", "Social Network"),
     val customCategories: List<String> = emptyList(),
     val catalogItems: List<CatalogItem> = emptyList(),
     val searchQuery: String = "",
@@ -29,14 +28,6 @@ class TambahLanggananViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
-    // Data Katalog Statis Bawaan Aplikasi
-    private val defaultCatalog = listOf(
-        CatalogItem("1", "Netflix", "https://placeholder.co/100", "Cineman"),
-        CatalogItem("2", "Spotify", "https://placeholder.co/100", "Music"),
-        CatalogItem("3", "YouTube Premium", "https://placeholder.co/100", "Popular"),
-        CatalogItem("4", "Twitter Blue", "https://placeholder.co/100", "Social Network")
-    )
-
     init {
         observeCatalogAndCategories()
     }
@@ -47,15 +38,19 @@ class TambahLanggananViewModel @Inject constructor(
                 repository.getCustomCategories(),
                 repository.getCustomApps()
             ) { localCats, localApps ->
-                val customCats = localCats.map { it.name }
-                val customItems = localApps.map { 
-                    CatalogItem(it.id, it.name, it.iconUrl, it.categoryName, isCustom = true) 
+                // Pisahkan: app bawaan (isCustom = false) vs buatan user (isCustom = true)
+                // Semua dari Room — termasuk data seed default
+                val allCategories = localCats.map { it.name }.distinct()
+                val allItems = localApps.map { app ->
+                    // App dengan id prefix "app_" adalah bawaan sistem, bukan custom user
+                    val isUserCustom = !app.id.startsWith("app_")
+                    CatalogItem(app.id, app.name, app.iconUrl, app.categoryName, isCustom = isUserCustom)
                 }
-                Pair(customCats, customItems)
+                Pair(allCategories, allItems)
             }.collect { (cats, items) ->
                 _uiState.update { it.copy(
                     customCategories = cats,
-                    catalogItems = defaultCatalog + items
+                    catalogItems = items
                 )}
             }
         }

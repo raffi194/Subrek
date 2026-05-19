@@ -85,7 +85,8 @@ fun TambahLanggananScreen(
                 )
 
                 // 2. FILTER BAR TABS KATEGORI (All paling kanan/ujung, disesuaikan urutannya)
-                val allCategories = listOf("Popular", "Cineman", "Music", "Social Network") + uiState.customCategories + listOf("All")
+                // Kategori default sudah ada di Room lewat seed, tidak perlu hardcode lagi
+                val allCategories = uiState.customCategories + listOf("All")
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)

@@ -117,6 +117,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  '8539b696-1c56-4dc7-9a09-de7f7f7a0f74', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  '8539b696-1c56-4dc7-9a09-de7f7f7a0f74', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  '8539b696-1c56-4dc7-9a09-de7f7f7a0f74', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   '8539b696-1c56-4dc7-9a09-de7f7f7a0f74', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     '8539b696-1c56-4dc7-9a09-de7f7f7a0f74', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
+
 -- 5. Membuat trigger baru (pastikan di-drop dulu jika sudah ada agar aman)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -171,6 +195,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
+
 -- Kueri Akhiri Langganan: Mengubah status menjadi 'ENDED' agar dipindahkan secara otomatis ke Card Riwayat
 CREATE OR REPLACE FUNCTION public.terminate_subscription_service(
     p_subscription_id UUID
@@ -184,6 +232,30 @@ BEGIN
       AND user_id = auth.uid();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
 
 -- =========================================================================
 -- TAMBAHAN SECARA KUMULATIF UNTUK STEP 5.5 (USER PROFILE & STORAGE MANAGEMENT)
@@ -206,6 +278,30 @@ BEGIN
     WHERE id = target_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
 
 -- 2. Persiapan Kebijakan Supabase Storage Bucket untuk Gambar Avatar (Jika Menggunakan Storage)
 -- Mengizinkan pengguna mengunggah foto profil mereka sendiri ke dalam bucket bernama 'avatars'
@@ -422,6 +518,30 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
+
+-- =========================================================================
 -- TAMBAHAN KUMULATIF: STEP 5.2 SWIPE-TO-DELETE & HISTORY (Gap Fix)
 -- =========================================================================
 
@@ -542,6 +662,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/
+
 CREATE OR REPLACE FUNCTION public.upsert_user_app(
     p_id TEXT,
     p_name TEXT,
@@ -557,3 +701,27 @@ BEGIN
             category_name = EXCLUDED.category_name;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================================================================
+-- SEED DATA DEFAULT (Jalankan sekali setelah setup awal database)
+-- Data ini menjadi katalog bawaan aplikasi SUBREK
+-- =========================================================================
+
+-- Catatan: Data seed di bawah menggunakan user_id fiktif untuk referensi.
+-- Di production, katalog app bawaan dikelola dari sisi Android Room DB (offline-first).
+-- Tabel user_categories dan user_apps membutuhkan user_id valid dari auth.users.
+-- Seed ini hanya untuk keperluan testing/development environment.
+
+-- INSERT CONTOH DATA SUBSCRIPTIONS (Untuk Testing di Supabase Dashboard)
+-- Ganti 'YOUR_TEST_USER_UUID' dengan UUID user yang sudah terdaftar di auth.users
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, created_at)
+VALUES
+    ('demo_netflix',  'YOUR_TEST_USER_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', NOW() + INTERVAL '7 days',  'Cineman',      'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '3 months'),
+    ('demo_spotify',  'YOUR_TEST_USER_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', NOW() + INTERVAL '14 days', 'Music',         'E-Wallet',     'ACTIVE', NOW() - INTERVAL '5 months'),
+    ('demo_youtube',  'YOUR_TEST_USER_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', NOW() + INTERVAL '3 days',  'Popular',       'Kartu Kredit', 'ACTIVE', NOW() - INTERVAL '1 month'),
+    ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
+    ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
+ON CONFLICT (id) DO NOTHING;
+*/

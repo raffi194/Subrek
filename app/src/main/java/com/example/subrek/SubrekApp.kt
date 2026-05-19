@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.*
 import com.example.subrek.core.background.NotificationWorker
+import com.example.subrek.core.utils.DatabaseSeeder
 import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -14,6 +15,9 @@ class SubrekApp : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var databaseSeeder: DatabaseSeeder
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -23,6 +27,7 @@ class SubrekApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         try {
+            databaseSeeder.seedIfNeeded()
             setupDailyNotificationWorker()
         } catch (e: Exception) {
             e.printStackTrace()
