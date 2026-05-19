@@ -120,7 +120,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override fun getAverageConsumption(): Flow<Double> {
-        return subscriptionDao.getAverageMonthlyConsumption()
+        return subscriptionDao.getAverageMonthlyConsumption().map { it ?: 0.0 }
     }
 
     override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {

@@ -36,7 +36,7 @@ interface SubscriptionDao {
             END
         ), 0.0) FROM subscriptions WHERE status = 'ACTIVE'
     """)
-    fun getAverageMonthlyConsumption(): Flow<Double>
+    fun getAverageMonthlyConsumption(): Flow<Double?>
 
     @Query("SELECT * FROM subscriptions WHERE status = 'ENDED'")
     fun getSubscriptionHistory(): Flow<List<SubscriptionEntity>>
