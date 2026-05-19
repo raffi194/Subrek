@@ -33,74 +33,62 @@ object SeedData {
         LocalAppEntity(
             id = "app_netflix",
             name = "Netflix",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/200px-Netflix_2015_logo.svg.png",
-            categoryName = "Cineman"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/200px-Netflix_2015_logo.svg.png"
         ),
         LocalAppEntity(
             id = "app_spotify",
             name = "Spotify",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/200px-Spotify_logo_without_text.svg.png",
-            categoryName = "Music"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/200px-Spotify_logo_without_text.svg.png"
         ),
         LocalAppEntity(
             id = "app_youtube",
             name = "YouTube Premium",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/200px-YouTube_full-color_icon_%282017%29.svg.png",
-            categoryName = "Popular"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/200px-YouTube_full-color_icon_%282017%29.svg.png"
         ),
         LocalAppEntity(
             id = "app_twitter",
             name = "Twitter Blue",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_Twitter.svg/200px-Logo_of_Twitter.svg.png",
-            categoryName = "Social Network"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_Twitter.svg/200px-Logo_of_Twitter.svg.png"
         ),
         LocalAppEntity(
             id = "app_notion",
             name = "Notion",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png",
-            categoryName = "Productivity"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png"
         ),
         LocalAppEntity(
             id = "app_canva",
             name = "Canva Pro",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Canva_Logo.svg/200px-Canva_Logo.svg.png",
-            categoryName = "Productivity"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Canva_Logo.svg/200px-Canva_Logo.svg.png"
         ),
         LocalAppEntity(
             id = "app_disney",
             name = "Disney+ Hotstar",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Disney%2B_logo.svg/200px-Disney%2B_logo.svg.png",
-            categoryName = "Cineman"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Disney%2B_logo.svg/200px-Disney%2B_logo.svg.png"
         ),
         LocalAppEntity(
             id = "app_icloud",
             name = "iCloud+",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/ICloud_logo.svg/200px-ICloud_logo.svg.png",
-            categoryName = "Utilitas"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/ICloud_logo.svg/200px-ICloud_logo.svg.png"
         ),
         LocalAppEntity(
             id = "app_googledrive",
             name = "Google One",
-            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Google_Drive_logo.png/200px-Google_Drive_logo.png",
-            categoryName = "Utilitas"
+            iconUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Google_Drive_logo.png/200px-Google_Drive_logo.png"
         ),
         LocalAppEntity(
             id = "app_vidio",
             name = "Vidio",
-            iconUrl = "https://placeholder.co/100",
-            categoryName = "Cineman"
+            iconUrl = "https://placeholder.co/100"
         ),
         LocalAppEntity(
             id = "app_mola",
             name = "Mola TV",
-            iconUrl = "https://placeholder.co/100",
-            categoryName = "Cineman"
+            iconUrl = "https://placeholder.co/100"
         ),
         LocalAppEntity(
             id = "app_joox",
             name = "JOOX Premium",
-            iconUrl = "https://placeholder.co/100",
-            categoryName = "Music"
+            iconUrl = "https://placeholder.co/100"
         ),
     )
 

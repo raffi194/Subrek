@@ -17,7 +17,6 @@ data class DashboardUiState(
     val subscriptionsList: List<Subscription> = emptyList(),
     val subscriptionHistory: List<Subscription> = emptyList(),
     val statsState: UiState<DashboardStats> = UiState.Loading,
-    val selectedCategory: String = "Semua",
     val userName: String = "User",
     val userAvatarUrl: String? = null,
     val averageConsumption: Double = 0.0,
@@ -80,19 +79,10 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun changeCategoryFilter(category: String) {
-        _uiState.update { it.copy(selectedCategory = category) }
-        applyFilter()
-    }
-
+    // 🛠️ DIUBAH: Disederhanakan karena penyaringan kategori tidak diperlukan lagi
     private fun applyFilter() {
         val current = _uiState.value
-        val filtered = if (current.selectedCategory == "Semua") {
-            current.rawSubscriptions
-        } else {
-            current.rawSubscriptions.filter { it.category == current.selectedCategory }
-        }
-        _uiState.update { it.copy(subscriptionsList = filtered) }
+        _uiState.update { it.copy(subscriptionsList = current.rawSubscriptions) }
     }
 
     fun deleteSubscription(subscriptionId: String) {

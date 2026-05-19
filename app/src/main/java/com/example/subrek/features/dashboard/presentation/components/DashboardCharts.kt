@@ -19,16 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.subrek.core.theme.*
 import com.example.subrek.features.subscription.domain.model.Subscription
-import java.text.NumberFormat
-import java.util.Locale
 
 // Palet warna statis fungsional untuk grafik (Inspirasi Tailwind)
 val ChartColors = listOf(Blue500, Amber500, Rose500, Emerald500, Indigo500)
 
 @Composable
 fun DonutChartCategories(subscriptions: List<Subscription>) {
-    // Agregasikan pengeluaran bulanan berdasarkan Kategori
-    val categorySpends = subscriptions.groupBy { it.category }.mapValues { entry ->
+    // 🛠️ DIUBAH: Mengganti agregasi pengeluaran berdasarkan Billing Cycle karena kategori dihapus
+    val cycleSpends = subscriptions.groupBy { it.billingCycle.name }.mapValues { entry ->
         entry.value.sumOf { sub ->
             when (sub.billingCycle.name) {
                 "WEEKLY" -> sub.price * 4.33
@@ -38,7 +36,7 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
         }
     }
     
-    val totalSpend = categorySpends.values.sum()
+    val totalSpend = cycleSpends.values.sum()
     if (totalSpend == 0.0) return
 
     Row(
@@ -55,7 +53,7 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 var startAngle = -90f
-                categorySpends.values.forEachIndexed { index, spend ->
+                cycleSpends.values.forEachIndexed { index, spend ->
                     val sweepAngle = ((spend / totalSpend) * 360f).toFloat()
                     drawArc(
                         color = ChartColors.getOrElse(index) { Slate400 },
@@ -68,7 +66,7 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
                 }
             }
             Text(
-                text = "Kategori",
+                text = "Siklus",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = Slate400
@@ -82,7 +80,7 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            categorySpends.entries.forEachIndexed { index, entry ->
+            cycleSpends.entries.forEachIndexed { index, entry ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

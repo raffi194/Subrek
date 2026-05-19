@@ -21,16 +21,8 @@ class GetMonthlyReportUseCase @Inject constructor() {
             }
         }
 
-        // 2. Agregasi Breakdown Pengeluaran Per Kategori
-        val breakdown = validSubs.groupBy { it.category }.mapValues { entry ->
-            entry.value.sumOf { sub ->
-                when (sub.billingCycle.name) {
-                    "WEEKLY" -> sub.price * 4.33
-                    "YEARLY" -> sub.price / 12.0
-                    else -> sub.price
-                }
-            }
-        }
+        // 2. 🛠️ DIUBAH: Mengisi emptyMap() karena breakdown pengelompokan kategori sudah dihapus dari skema app
+        val breakdown = emptyMap<String, Double>()
 
         // 3. KUERI AGREGAT DATA RENTANG WAKTU (Membentuk Poin Tren Grafik Garis)
         val trendPoints = mutableMapOf<String, Double>()

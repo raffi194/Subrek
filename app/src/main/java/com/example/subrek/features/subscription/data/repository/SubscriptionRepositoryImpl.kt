@@ -207,8 +207,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     "id" to app.id,
                     "user_id" to userId,
                     "name" to app.name,
-                    "icon_url" to app.iconUrl,
-                    "category_name" to app.categoryName
+                    "icon_url" to app.iconUrl
                 )
             )
         } catch (e: Exception) {
@@ -284,7 +283,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     currency = currency,
                     billingCycle = billingCycle,
                     nextPaymentDate = nextPaymentDate,
-                    category = "Other",
                     paymentMethod = paymentMethod,
                     isTrial = status == "TRIAL",
                     isGhostSubscription = false,

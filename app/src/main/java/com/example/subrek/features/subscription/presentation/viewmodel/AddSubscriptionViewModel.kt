@@ -24,7 +24,7 @@ data class AddSubscriptionFormState(
     val price: String = "",
     val priceError: String? = null,
     val currency: String = "IDR",
-    val category: String = "Hiburan",
+    // 🛠️ DIUBAH: Inisialisasi properti category di dalam Form State telah dihapus
     val paymentMethod: String = "Kartu Kredit",
     val billingCycle: BillingCycle = BillingCycle.MONTHLY,
     val firstPaymentDate: LocalDate = LocalDate.now(),
@@ -72,9 +72,8 @@ class AddSubscriptionViewModel @Inject constructor(
         _formState.value = _formState.value.copy(currency = newCurrency)
     }
 
-    fun onCategoryChange(newCategory: String) {
-        _formState.value = _formState.value.copy(category = newCategory)
-    }
+    // 🛠️ DIUBAH: Fungsi onCategoryChange dikosongkan karena UI kategori dibersihkan
+    fun onCategoryChange(newCategory: String) { }
 
     fun onPaymentMethodChange(newMethod: String) {
         _formState.value = _formState.value.copy(paymentMethod = newMethod)
@@ -113,7 +112,7 @@ class AddSubscriptionViewModel @Inject constructor(
                     billingCycle = currentState.billingCycle,
                     startDate = currentState.firstPaymentDate,
                     nextPaymentDate = currentState.firstPaymentDate, // Inisialisasi awal pembayaran
-                    category = currentState.category,
+                    // 🛠️ DIUBAH: Pemasukan nilai parameter category ke domain model Subscription di sini telah dihapus
                     paymentMethod = currentState.paymentMethod,
                     isTrial = currentState.isTrial,
                     status = if (currentState.isTrial) SubscriptionStatus.TRIAL else SubscriptionStatus.ACTIVE,

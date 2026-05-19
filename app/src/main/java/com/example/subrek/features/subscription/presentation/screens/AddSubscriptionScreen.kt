@@ -40,11 +40,9 @@ fun AddSubscriptionScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    val categories = listOf("Hiburan", "Productivity", "Utilitas", "Kesehatan", "Finansial")
     val currencies = listOf("IDR", "USD", "EUR", "SGD")
     val paymentMethods = listOf("Kartu Kredit", "E-Wallet", "Transfer Bank", "PayPal")
 
-    var categoryExpanded by remember { mutableStateOf(false) }
     var currencyExpanded by remember { mutableStateOf(false) }
     var paymentExpanded by remember { mutableStateOf(false) }
 
@@ -136,26 +134,6 @@ fun AddSubscriptionScreen(
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Blue500, errorBorderColor = Rose500)
                 )
-            }
-
-            // Dropdown Kategori
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = formState.category,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Kategori") },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, "Dropdown") },
-                    modifier = Modifier.fillMaxWidth().clickable { categoryExpanded = true }
-                )
-                DropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }, modifier = Modifier.fillMaxWidth(0.85f)) {
-                    categories.forEach { cat ->
-                        DropdownMenuItem(text = { Text(cat) }, onClick = {
-                            viewModel.onCategoryChange(cat)
-                            categoryExpanded = false
-                        })
-                    }
-                }
             }
 
             // Dropdown Metode Pembayaran

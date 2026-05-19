@@ -13,6 +13,5 @@ data class LocalCategoryEntity(
 data class LocalAppEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val iconUrl: String?,
-    val categoryName: String
+    val iconUrl: String?
 )

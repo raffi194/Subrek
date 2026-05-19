@@ -35,7 +35,7 @@ class TambahLanggananViewModel @Inject constructor(
                 .map { localApps ->
                     localApps.map { app ->
                         val isUserCustom = !app.id.startsWith("app_")
-                        CatalogItem(app.id, app.name, app.iconUrl, app.categoryName, isCustom = isUserCustom)
+                        CatalogItem(app.id, app.name, app.iconUrl, isCustom = isUserCustom)
                     }
                 }
                 .catch { e -> e.printStackTrace() }
@@ -49,7 +49,7 @@ class TambahLanggananViewModel @Inject constructor(
 
     fun addCustomApp(name: String, iconUrl: String?) {
         viewModelScope.launch {
-            repository.insertCustomApp(LocalAppEntity(UUID.randomUUID().toString(), name, iconUrl, ""))
+            repository.insertCustomApp(LocalAppEntity(UUID.randomUUID().toString(), name, iconUrl))
         }
     }
 
@@ -97,8 +97,7 @@ class TambahLanggananViewModel @Inject constructor(
                 LocalAppEntity(
                     id = generatedId,
                     name = name,
-                    iconUrl = remoteIconUrl,
-                    categoryName = "" // Kosongkan penamaan kategori internal
+                    iconUrl = remoteIconUrl
                 )
             )
 
