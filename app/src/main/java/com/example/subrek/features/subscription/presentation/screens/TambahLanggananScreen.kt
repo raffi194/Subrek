@@ -59,8 +59,12 @@ fun TambahLanggananScreen(
             TopAppBar(
                 title = { Text("Tambah Langganan", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = { showCatDialog = true }) { Text("+Kategori", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
-                    IconButton(onClick = { showAppDialog = true }) { Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah App Baru") }
+                    TextButton(onClick = { showCatDialog = true }) { 
+                        Text("+ Kategori", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
+                    }
+                    IconButton(onClick = { showAppDialog = true }) { 
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah App Baru") 
+                    }
                 }
             )
         },
@@ -84,14 +88,12 @@ fun TambahLanggananScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                // 2. FILTER BAR TABS KATEGORI (All paling kanan/ujung, disesuaikan urutannya)
-                // Kategori default sudah ada di Room lewat seed, tidak perlu hardcode lagi
-                val allCategories = uiState.customCategories + listOf("All")
+                // 2. FILTER BAR TABS KATEGORI (Membaca langsung dari state ViewModel yang sudah stabil)
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 ) {
-                    items(allCategories) { category ->
+                    items(uiState.customCategories, key = { it }) { category ->
                         val isSelected = uiState.selectedCategory == category
                         FilterChip(
                             selected = isSelected,
@@ -115,11 +117,11 @@ fun TambahLanggananScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize().padding(top = 8.dp)
                 ) {
-                    items(filteredItems) { app ->
+                    items(filteredItems, key = { it.id }) { app ->
                         Card(
                             modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -179,12 +181,14 @@ fun TambahLanggananScreen(
 
                     Button(
                         onClick = {
+                            // Proteksi konversi string kosong/invalid menjadi numeric fallback 0.0 agar tidak crash
+                            val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
                             viewModel.saveNewSubscription(
                                 name = selectedAppForForm!!.name,
                                 iconUrl = selectedAppForForm!!.iconUrl,
-                                price = priceInput.toDoubleOrNull() ?: 0.0,
+                                price = cleanPrice,
                                 cycle = selectedCycle,
-                                date = startDateInput,
+                                date = startDateInput.ifBlank { "2026-01-01" },
                                 isTrial = isFreeTrial
                             )
                         },

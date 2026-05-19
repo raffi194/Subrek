@@ -38,9 +38,8 @@ class TambahLanggananViewModel @Inject constructor(
                 repository.getCustomCategories(),
                 repository.getCustomApps()
             ) { localCats, localApps ->
-                // Pisahkan: app bawaan (isCustom = false) vs buatan user (isCustom = true)
-                // Semua dari Room — termasuk data seed default
-                val allCategories = localCats.map { it.name }.distinct()
+                // Memasukkan "All" sebagai elemen pertama list kategori secara konstan dan stabil
+                val allCategories = listOf("All") + localCats.map { it.name }.distinct().filter { it != "All" }
                 val allItems = localApps.map { app ->
                     // App dengan id prefix "app_" adalah bawaan sistem, bukan custom user
                     val isUserCustom = !app.id.startsWith("app_")
