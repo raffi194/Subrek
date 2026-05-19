@@ -65,7 +65,8 @@ fun MainNavigation(
     val isUserLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
     val onboardingUiState by onboardingViewModel.uiState.collectAsState()
 
-    if (isUserLoggedIn == null) {
+    // Jika data onboarding completed atau session masih memuat (null), berikan layar pemuat sementara yang aman
+    if (isUserLoggedIn == null || onboardingUiState.isOnboardingCompleted == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -75,7 +76,7 @@ fun MainNavigation(
     val startDestination = remember(isUserLoggedIn, onboardingUiState.isOnboardingCompleted) {
         when {
             isUserLoggedIn == true -> Screen.Dashboard.route
-            !onboardingUiState.isOnboardingCompleted -> Screen.Onboarding.route
+            onboardingUiState.isOnboardingCompleted == false -> Screen.Onboarding.route
             else -> Screen.Auth.route
         }
     }

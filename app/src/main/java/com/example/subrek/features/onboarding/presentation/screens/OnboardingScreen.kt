@@ -92,7 +92,7 @@ fun OnboardingScreen(
 
     // Mengamati jika onboarding telah selesai, langsung arahkan ke Dashboard
     LaunchedEffect(uiState.isOnboardingCompleted) {
-        if (uiState.isOnboardingCompleted) {
+        if (uiState.isOnboardingCompleted == true) {
             onNavigateToDashboard()
         }
     }

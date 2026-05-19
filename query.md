@@ -219,6 +219,66 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 */
 
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
+*/
+
 -- Kueri Akhiri Langganan: Mengubah status menjadi 'ENDED' agar dipindahkan secara otomatis ke Card Riwayat
 CREATE OR REPLACE FUNCTION public.terminate_subscription_service(
     p_subscription_id UUID
@@ -255,6 +315,66 @@ VALUES
     ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
     ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
 ON CONFLICT (id) DO NOTHING;
+*/
+
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
 */
 
 -- =========================================================================
@@ -301,6 +421,66 @@ VALUES
     ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
     ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
 ON CONFLICT (id) DO NOTHING;
+*/
+
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
 */
 
 -- 2. Persiapan Kebijakan Supabase Storage Bucket untuk Gambar Avatar (Jika Menggunakan Storage)
@@ -542,6 +722,66 @@ ON CONFLICT (id) DO NOTHING;
 */
 
 -- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
+*/
+
+-- =========================================================================
 -- TAMBAHAN KUMULATIF: STEP 5.2 SWIPE-TO-DELETE & HISTORY (Gap Fix)
 -- =========================================================================
 
@@ -686,6 +926,66 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 */
 
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
+*/
+
 CREATE OR REPLACE FUNCTION public.upsert_user_app(
     p_id TEXT,
     p_name TEXT,
@@ -724,4 +1024,64 @@ VALUES
     ('demo_notion',   'YOUR_TEST_USER_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  NOW() + INTERVAL '30 days', 'Productivity',  'Transfer Bank','TRIAL',  NOW() - INTERVAL '2 months'),
     ('demo_mola',     'YOUR_TEST_USER_UUID', 'Mola TV',          39000,  'IDR', 'MONTHLY', NOW() - INTERVAL '1 month', 'Cineman',       'E-Wallet',     'ENDED',  NOW() - INTERVAL '1 year')
 ON CONFLICT (id) DO NOTHING;
+*/
+
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: PERBAIKAN STRUKTUR DAN GLOBAL READ POLICY DATA BAWAAN (ALL USERS)
+-- =========================================================================
+
+-- 1. Pastikan tabel subscriptions diperbarui sesuai skema terbaru Anda dengan aman
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id text not null,
+  user_id uuid not null,
+  name text not null,
+  price numeric(12, 2) not null default 0.00,
+  currency text not null default 'IDR'::text,
+  billing_cycle text not null,
+  next_payment_date date not null,
+  category text not null,
+  payment_method text not null,
+  status text not null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint subscriptions_pkey primary key (id),
+  constraint subscriptions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint check_price_non_negative check ((price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+-- 2. Memastikan Trigger Sinkronisasi Pembaruan Waktu Aktif
+DROP TRIGGER IF EXISTS update_subscriptions_modtime ON public.subscriptions;
+create trigger update_subscriptions_modtime BEFORE
+update on subscriptions for EACH row
+execute FUNCTION update_modified_column ();
+
+-- 3. Menambahkan kolom flag penanda khusus 'is_default_catalogue' jika belum ada 
+-- agar data master bawaan app terisolasi dan bisa dibaca oleh seluruh user
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS is_default_catalogue BOOLEAN DEFAULT FALSE;
+
+-- 4. PEMBARUAN KEBIJAKAN RLS (ROW LEVEL SECURITY)
+-- Menghapus policy select yang lama untuk menulis versi baru yang mendukung Katalog Bersama
+DROP POLICY IF EXISTS "Akses data mandiri - SELECT" ON public.subscriptions;
+
+-- Membuat policy baru: User dapat membaca datanya sendiri OR data tersebut merupakan katalog default bawaan aplikasi
+CREATE POLICY "Akses data mandiri dan katalog bawaan - SELECT" 
+ON public.subscriptions 
+FOR SELECT 
+USING (auth.uid() = user_id OR is_default_catalogue = TRUE);
+
+-- 5. SEED DATA KATALOG UTAMA BAWAAN APLIKASI (DAPAT DILIHAT OLEH SEMUA USER)
+-- Catatan: Menggunakan ID dummy user yang valid atau sistem internal agar lolos fkey constraint auth.users.
+-- Jika Anda menjalankan seed ini di lokal/development, pastikan memasukkan UUID user admin atau user penampung yang valid.
+
+/*
+INSERT INTO public.subscriptions 
+    (id, user_id, name, price, currency, billing_cycle, next_payment_date, category, payment_method, status, is_default_catalogue)
+VALUES
+    ('global_netflix',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Netflix',          54000,  'IDR', 'MONTHLY', '2026-06-01',  'Cineman',      'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_spotify',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'Spotify',          54990,  'IDR', 'MONTHLY', '2026-06-15', 'Music',         'E-Wallet',     'ACTIVE', TRUE),
+    ('global_youtube',  'YOUR_SYSTEM_OR_ADMIN_UUID', 'YouTube Premium',  59000,  'IDR', 'MONTHLY', '2026-06-10',  'Popular',       'Kartu Kredit', 'ACTIVE', TRUE),
+    ('global_notion',   'YOUR_SYSTEM_OR_ADMIN_UUID', 'Notion',          160000,  'IDR', 'YEARLY',  '2026-12-01', 'Productivity',  'Transfer Bank','ACTIVE', TRUE)
+ON CONFLICT (id) DO UPDATE 
+SET is_default_catalogue = TRUE;
 */
