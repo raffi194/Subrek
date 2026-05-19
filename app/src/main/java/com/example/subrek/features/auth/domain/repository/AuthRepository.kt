@@ -1,3 +1,5 @@
+package com.example.subrek.features.auth.domain.repository
+
 import android.net.Uri
 import com.example.subrek.features.auth.domain.model.UserProfile
 import kotlinx.coroutines.flow.Flow

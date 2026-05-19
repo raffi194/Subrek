@@ -67,9 +67,9 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Avatar profil user
-                        if (profileState.currentAvatarUrl.isNotEmpty()) {
+                        if (!profileState.avatarUrl.isNullOrEmpty()) {
                             AsyncImage(
-                                model = profileState.currentAvatarUrl,
+                                model = profileState.avatarUrl,
                                 contentDescription = "Foto Profil",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -85,7 +85,7 @@ fun DashboardScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = (profileState.originalName.takeIf { it.isNotEmpty() } ?: "U").take(1).uppercase(),
+                                    text = (profileState.fullName?.takeIf { it.isNotEmpty() } ?: "U").take(1).uppercase(),
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
@@ -101,7 +101,7 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.Normal
                             )
                             Text(
-                                text = profileState.originalName.takeIf { it.isNotEmpty() } ?: "Pengguna",
+                                text = profileState.fullName?.takeIf { it.isNotEmpty() } ?: "Pengguna",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold
