@@ -52,6 +52,9 @@ class DashboardViewModel @Inject constructor(
                         isLoading = false
                     ) }
                     applyFilter()
+
+                    // Melakukan force sync data lokal ke remote (termasuk verifikasi session data user profiles)
+                    repository.syncWithRemote()
                 }
         }
         // Load riwayat langganan yang sudah berakhir (status = ENDED)

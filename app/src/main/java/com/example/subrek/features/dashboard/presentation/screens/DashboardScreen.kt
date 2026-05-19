@@ -58,6 +58,11 @@ fun DashboardScreen(
     val profileState by profileViewModel.uiState.collectAsState()
     val categories = listOf("Semua", "Hiburan", "Productivity", "Utilitas", "Kesehatan", "Finansial")
 
+    // Pemicu reaktif untuk memastikan data profil ter-refresh langsung dari database setiap screen aktif
+    LaunchedEffect(Unit) {
+        profileViewModel.loadProfile()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -100,8 +105,13 @@ fun DashboardScreen(
                                 color = Slate400,
                                 fontWeight = FontWeight.Normal
                             )
+                            // Mengambil data full_name secara dinamis & real-time dari profileState database profiles
                             Text(
-                                text = profileState.fullName?.takeIf { it.isNotEmpty() } ?: "Pengguna",
+                                text = when {
+                                    profileState.isLoading -> "Memuat..."
+                                    !profileState.fullName.isNullOrBlank() -> profileState.fullName!!
+                                    else -> "Pengguna"
+                                },
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold
