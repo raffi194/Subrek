@@ -34,14 +34,22 @@ class GetMonthlyReportUseCase @Inject constructor() {
                 val label = targetMonth.format(DateTimeFormatter.ofPattern("MMM yy"))
                 
                 // Simulasikan akumulasi historis biaya bulanan aktif di rentang bulan tersebut
-                val monthlySum = validSubs.filter { it.createdAt <= targetMonth }.sumOf { it.price }
+                val monthlySum = validSubs.filter { 
+                    it.createdAt <= targetMonth 
+                }.sumOf { sub ->
+                    when (sub.billingCycle) {
+                        com.example.subrek.features.subscription.domain.model.BillingCycle.YEARLY -> sub.price / 12.0
+                        else -> sub.price
+                    }
+                }
                 trendPoints[label] = monthlySum
             }
         } else {
             // Rentang Bulanan: Kelompokkan 4 minggu terakhir (Format: "W1", "W2", dst)
             for (i in 4 downTo 1) {
                 val label = "Minggu $i"
-                val weeklySum = totalSpend / 4 * (0.8 + (i * 0.1)) // Agregasi proporsional fluktuasi biaya minggu berjalan
+                // Perhitungan proporsional berdasarkan total pengeluaran bulanan yang sudah dikonversi
+                val weeklySum = totalSpend / 4 * (0.8 + (i * 0.05))
                 trendPoints[label] = weeklySum
             }
         }

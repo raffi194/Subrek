@@ -255,24 +255,46 @@ class SubscriptionRepositoryImpl @Inject constructor(
         val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
         val userId = session?.user?.id
 
+        // 🛠️ SAFE PARSING TANGGAL: Cegah DateTimeParseException
+        val parsedDate = try {
+            LocalDate.parse(nextPaymentDate, DateTimeFormatter.ISO_LOCAL_DATE)
+        } catch (e: Exception) {
+            LocalDate.now() // Fallback jika format salah
+        }
+
+        // 🛠️ SAFE ENUM CONVERSION: Pastikan mapping tidak melempar IllegalArgumentException
+        val domainCycle = try {
+            com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle.uppercase())
+        } catch (e: Exception) {
+            com.example.subrek.features.subscription.domain.model.BillingCycle.MONTHLY // Default fallback
+        }
+
+        val domainStatus = try {
+            com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status.uppercase())
+        } catch (e: Exception) {
+            com.example.subrek.features.subscription.domain.model.SubscriptionStatus.ACTIVE // Default fallback
+        }
+
         val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
             id = id,
             name = name,
             price = price,
-            currency = currency,
-            billingCycle = com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle),
-            startDate = LocalDate.parse(nextPaymentDate),
-            nextPaymentDate = LocalDate.parse(nextPaymentDate),
-            paymentMethod = paymentMethod,
-            isTrial = status == "TRIAL",
-            status = com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status),
+            currency = currency.ifBlank { "IDR" },
+            billingCycle = domainCycle,
+            startDate = parsedDate,
+            nextPaymentDate = parsedDate,
+            paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
+            isTrial = status.uppercase() == "TRIAL",
+            status = domainStatus,
             createdAt = LocalDate.now(),
             updatedAt = LocalDate.now(),
             iconUrl = iconUrl
         )
         
+        // 1. Simpan ke Database Lokal (Room) terlebih dahulu (Offline-First)
         insertSubscription(subscription)
 
+        // 2. Kirim ke Remote (Supabase) jika user terautentikasi
         if (userId != null) {
             try {
                 val dto = SubscriptionDto(
@@ -280,19 +302,20 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     userId = userId,
                     name = name,
                     price = price,
-                    currency = currency,
-                    billingCycle = billingCycle,
+                    currency = currency.ifBlank { "IDR" },
+                    billingCycle = billingCycle.uppercase(),
                     nextPaymentDate = nextPaymentDate,
-                    paymentMethod = paymentMethod,
-                    isTrial = status == "TRIAL",
+                    paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
+                    isTrial = status.uppercase() == "TRIAL",
                     isGhostSubscription = false,
-                    status = status,
+                    status = status.uppercase(),
                     createdAt = LocalDate.now().toString(),
                     iconUrl = iconUrl
                 )
                 supabaseClient.postgrest["subscriptions"].insert(dto)
             } catch (e: Exception) {
                 e.printStackTrace()
+                // Data tetap aman di lokal dan akan disinkronkan nanti
             }
         }
     }

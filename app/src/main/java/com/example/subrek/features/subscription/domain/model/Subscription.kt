@@ -11,7 +11,7 @@ data class Subscription(
     val name: String,
     val price: Double,
     val currency: String,
-    val billingCycle: BillingCycle, // WEEKLY, MONTHLY, YEARLY
+    val billingCycle: BillingCycle, // MONTHLY, YEARLY
     val startDate: LocalDate,
     val nextPaymentDate: LocalDate,
     val paymentMethod: String,
@@ -25,7 +25,6 @@ data class Subscription(
 )
 
 enum class BillingCycle {
-    WEEKLY,
     MONTHLY,
     YEARLY
 }
