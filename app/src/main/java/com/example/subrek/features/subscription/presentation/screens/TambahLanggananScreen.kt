@@ -70,167 +70,175 @@ fun TambahLanggananScreen(
         },
         contentWindowInsets = WindowInsets.statusBars
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding()
-        ) {
-            if (selectedAppForForm == null) {
-                // 1. SEARCH FIELD
-                OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.updateSearchQuery(it) },
-                    placeholder = { Text("Cari spesifik app subscriptions...") },
-                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp)
-                )
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .navigationBarsPadding()
+            ) {
+                if (selectedAppForForm == null) {
+                    // 1. SEARCH FIELD
+                    OutlinedTextField(
+                        value = uiState.searchQuery,
+                        onValueChange = { viewModel.updateSearchQuery(it) },
+                        placeholder = { Text("Cari spesifik app subscriptions...") },
+                        leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                // 2. FILTER BAR TABS KATEGORI (Membaca langsung dari state ViewModel yang sudah stabil)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                ) {
-                    items(uiState.customCategories, key = { it }) { category ->
-                        val isSelected = uiState.selectedCategory == category
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.selectCategory(category) },
-                            label = { Text(category) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    // 2. FILTER BAR TABS KATEGORI (Membaca langsung dari state ViewModel yang sudah stabil)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                    ) {
+                        items(uiState.customCategories, key = { it }) { category ->
+                            val isSelected = uiState.selectedCategory == category
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.selectCategory(category) },
+                                label = { Text(category) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
                             )
-                        )
+                        }
                     }
-                }
 
-                // 3. RENDERING LIST ITEM KATALOG
-                val filteredItems = uiState.catalogItems.filter { item ->
-                    (uiState.selectedCategory == "All" || item.categoryName == uiState.selectedCategory) &&
-                    item.name.contains(uiState.searchQuery, ignoreCase = true)
-                }
+                    // 3. RENDERING LIST ITEM KATALOG
+                    val filteredItems = uiState.catalogItems.filter { item ->
+                        (uiState.selectedCategory == "All" || item.categoryName == uiState.selectedCategory) &&
+                        item.name.contains(uiState.searchQuery, ignoreCase = true)
+                    }
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize().padding(top = 8.dp)
-                ) {
-                    items(filteredItems, key = { it.id }) { app ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize().padding(top = 8.dp)
+                    ) {
+                        items(filteredItems, key = { it.id }) { app ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    AsyncImage(
-                                        model = app.iconUrl ?: "https://placeholder.co/100",
-                                        contentDescription = null,
-                                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column {
-                                        Text(text = app.name, fontWeight = FontWeight.SemiBold)
-                                        Text(text = app.categoryName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        AsyncImage(
+                                            model = app.iconUrl ?: "https://placeholder.co/100",
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column {
+                                            Text(text = app.name, fontWeight = FontWeight.SemiBold)
+                                            Text(text = app.categoryName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                        }
+                                    }
+                                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // 4. FORM DETAIL BERLANGGANAN (DIBUKA SAAT KATALOG DI-KLIK)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(top = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                            AsyncImage(model = selectedAppForForm?.iconUrl ?: "https://placeholder.co/100", contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = selectedAppForForm?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedTextField(value = priceInput, onValueChange = { priceInput = it }, label = { Text("Biaya Berlangganan (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = paymentMethod, onValueChange = { paymentMethod = it }, label = { Text("Metode Pembayaran") }, modifier = Modifier.fillMaxWidth())
+
+                        // Siklus Penagihan: 3 Opsi Dropdown
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            ExposedDropdownMenuBox(expanded = isCycleDropdownExpanded, onExpandedChange = { isCycleDropdownExpanded = !isCycleDropdownExpanded }) {
+                                OutlinedTextField(
+                                    value = selectedCycle, 
+                                    onValueChange = {}, 
+                                    readOnly = true, 
+                                    label = { Text("Siklus Penagihan") }, 
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCycleDropdownExpanded) }, 
+                                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                )
+                                ExposedDropdownMenu(expanded = isCycleDropdownExpanded, onDismissRequest = { isCycleDropdownExpanded = false }) {
+                                    listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { opt ->
+                                        DropdownMenuItem(text = { Text(opt) }, onClick = { selectedCycle = opt; isCycleDropdownExpanded = false })
                                     }
                                 }
-                                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
                             }
                         }
-                    }
-                }
-            } else {
-                // 4. FORM DETAIL BERLANGGANAN (DIBUKA SAAT KATALOG DI-KLIK)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize().padding(top = 8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-                        AsyncImage(model = selectedAppForForm?.iconUrl ?: "https://placeholder.co/100", contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = selectedAppForForm?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    }
 
-                    OutlinedTextField(value = priceInput, onValueChange = { priceInput = it }, label = { Text("Biaya Berlangganan (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = paymentMethod, onValueChange = { paymentMethod = it }, label = { Text("Metode Pembayaran") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = startDateInput, onValueChange = { startDateInput = it }, label = { Text("Tanggal Mulai Penagihan (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
 
-                    // Siklus Penagihan: 3 Opsi Dropdown
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        ExposedDropdownMenuBox(expanded = isCycleDropdownExpanded, onExpandedChange = { isCycleDropdownExpanded = !isCycleDropdownExpanded }) {
-                            OutlinedTextField(value = selectedCycle, onValueChange = {}, readOnly = true, label = { Text("Siklus Penagihan") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCycleDropdownExpanded) }, modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true))
-                            ExposedDropdownMenu(expanded = isCycleDropdownExpanded, onDismissRequest = { isCycleDropdownExpanded = false }) {
-                                listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { opt ->
-                                    DropdownMenuItem(text = { Text(opt) }, onClick = { selectedCycle = opt; isCycleDropdownExpanded = false })
-                                }
-                            }
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Layanan Free Trial", fontWeight = FontWeight.Medium)
+                            Switch(checked = isFreeTrial, onCheckedChange = { isFreeTrial = it })
                         }
-                    }
 
-                    OutlinedTextField(value = startDateInput, onValueChange = { startDateInput = it }, label = { Text("Tanggal Mulai Penagihan (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
-
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Layanan Free Trial", fontWeight = FontWeight.Medium)
-                        Switch(checked = isFreeTrial, onCheckedChange = { isFreeTrial = it })
+                        Button(
+                            onClick = {
+                                // Proteksi konversi string kosong/invalid menjadi numeric fallback 0.0 agar tidak crash
+                                val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
+                                viewModel.saveNewSubscription(
+                                    name = selectedAppForForm!!.name,
+                                    iconUrl = selectedAppForForm!!.iconUrl,
+                                    price = cleanPrice,
+                                    cycle = selectedCycle,
+                                    date = startDateInput.ifBlank { "2026-01-01" },
+                                    isTrial = isFreeTrial
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 8.dp)
+                        ) {
+                            Text("Simpan Langganan", fontWeight = FontWeight.Bold)
+                        }
+                        
+                        TextButton(onClick = { selectedAppForForm = null }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Kembali ke Katalog") }
                     }
-
-                    Button(
-                        onClick = {
-                            // Proteksi konversi string kosong/invalid menjadi numeric fallback 0.0 agar tidak crash
-                            val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
-                            viewModel.saveNewSubscription(
-                                name = selectedAppForForm!!.name,
-                                iconUrl = selectedAppForForm!!.iconUrl,
-                                price = cleanPrice,
-                                cycle = selectedCycle,
-                                date = startDateInput.ifBlank { "2026-01-01" },
-                                isTrial = isFreeTrial
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 8.dp)
-                    ) {
-                        Text("Simpan Langganan", fontWeight = FontWeight.Bold)
-                    }
-                    
-                    TextButton(onClick = { selectedAppForForm = null }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Kembali ke Katalog") }
                 }
             }
-        }
 
-        // =========================================================================
-        // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM (DATA ISOLATION)
-        // =========================================================================
-        if (showCatDialog) {
-            var catName by remember { mutableStateOf("") }
-            AlertDialog(
-                onDismissRequest = { showCatDialog = false },
-                title = { Text("Tambah Kategori Baru") },
-                text = { OutlinedTextField(value = catName, onValueChange = { catName = it }, label = { Text("Nama Kategori") }) },
-                confirmButton = { Button(onClick = { if(catName.isNotBlank()){ viewModel.addCustomCategory(catName); showCatDialog = false } }) { Text("Tambah") } }
-            )
-        }
+            // =========================================================================
+            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM (DATA ISOLATION)
+            // =========================================================================
+            if (showCatDialog) {
+                var catName by remember { mutableStateOf("") }
+                AlertDialog(
+                    onDismissRequest = { showCatDialog = false },
+                    title = { Text("Tambah Kategori Baru") },
+                    text = { OutlinedTextField(value = catName, onValueChange = { catName = it }, label = { Text("Nama Kategori") }) },
+                    confirmButton = { Button(onClick = { if(catName.isNotBlank()){ viewModel.addCustomCategory(catName); showCatDialog = false } }) { Text("Tambah") } }
+                )
+            }
 
-        if (showAppDialog) {
-            var appName by remember { mutableStateOf("") }
-            var appIcon by remember { mutableStateOf("") }
-            var appCat by remember { mutableStateOf("Popular") }
-            AlertDialog(
-                onDismissRequest = { showAppDialog = false },
-                title = { Text("Tambah Aplikasi Baru") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = appName, onValueChange = { appName = it }, label = { Text("Nama Aplikasi") })
-                        OutlinedTextField(value = appIcon, onValueChange = { appIcon = it }, label = { Text("URL Link Icon Gambar") })
-                        OutlinedTextField(value = appCat, onValueChange = { appCat = it }, label = { Text("Kategori Target") })
-                    }
-                },
-                confirmButton = { Button(onClick = { if(appName.isNotBlank()){ viewModel.addCustomApp(appName, appIcon.ifBlank { null }, appCat); showAppDialog = false } }) { Text("Simpan") } }
-            )
+            if (showAppDialog) {
+                var appName by remember { mutableStateOf("") }
+                var appIcon by remember { mutableStateOf("") }
+                var appCat by remember { mutableStateOf("Popular") }
+                AlertDialog(
+                    onDismissRequest = { showAppDialog = false },
+                    title = { Text("Tambah Aplikasi Baru") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = appName, onValueChange = { appName = it }, label = { Text("Nama Aplikasi") })
+                            OutlinedTextField(value = appIcon, onValueChange = { appIcon = it }, label = { Text("URL Link Icon Gambar") })
+                            OutlinedTextField(value = appCat, onValueChange = { appCat = it }, label = { Text("Kategori Target") })
+                        }
+                    },
+                    confirmButton = { Button(onClick = { if(appName.isNotBlank()){ viewModel.addCustomApp(appName, appIcon.ifBlank { null }, appCat); showAppDialog = false } }) { Text("Simpan") } }
+                )
+            }
         }
     }
 }

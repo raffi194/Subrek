@@ -46,7 +46,9 @@ class TambahLanggananViewModel @Inject constructor(
                     CatalogItem(app.id, app.name, app.iconUrl, app.categoryName, isCustom = isUserCustom)
                 }
                 Pair(allCategories, allItems)
-            }.collect { (cats, items) ->
+            }
+            .catch { e -> e.printStackTrace() }
+            .collect { (cats, items) ->
                 _uiState.update { it.copy(
                     customCategories = cats,
                     catalogItems = items
