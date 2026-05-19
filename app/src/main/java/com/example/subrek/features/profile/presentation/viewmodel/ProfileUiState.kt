@@ -8,7 +8,9 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val isUpdateSuccess: Boolean = false,
     val isLoggedOut: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    // State untuk navigasi ke halaman edit
+    val navigateToEdit: Boolean = false
 ) {
     // Memeriksa secara reaktif apakah ada perubahan data dibanding data asli
     // Catatan: originalName dan originalAvatarUrl dihapus karena kita menggunakan fullName dan avatarUrl langsung

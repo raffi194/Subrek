@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +39,7 @@ class AuthViewModel @Inject constructor(
     private fun checkSession() {
         viewModelScope.launch {
             try {
-                val currentSession = supabaseClient.auth.currentSessionOrNull()
+                val currentSession = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
                 _isUserLoggedIn.value = currentSession != null
             } catch (e: Exception) {
                 _isUserLoggedIn.value = false

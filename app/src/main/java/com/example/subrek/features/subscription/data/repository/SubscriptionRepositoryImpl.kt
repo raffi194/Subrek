@@ -11,6 +11,7 @@ import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
@@ -47,7 +48,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     override suspend fun syncWithRemote(): Result<Unit> {
         return try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return Result.failure(Exception("User not authenticated"))
 
             // 1. PUSH PHASE: Unggah data lokal yang "dirty" (berubah saat offline)
@@ -129,7 +130,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         
         // 2. Hapus di remote
         try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
             if (userId != null) {
                 supabaseClient.postgrest["subscriptions"].delete {
@@ -161,7 +162,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         
         // Update remote (Push update)
         try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
             if (userId != null) {
                 supabaseClient.postgrest["subscriptions"].update(
@@ -190,7 +191,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
         // Update remote
         try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
             if (userId != null) {
                 supabaseClient.postgrest["subscriptions"].update(
@@ -218,7 +219,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
         // 2. Push ke Supabase cloud
         try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return
 
             supabaseClient.postgrest["user_categories"].upsert(
@@ -244,7 +245,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
         // 2. Push ke Supabase cloud
         try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return
 
             supabaseClient.postgrest["user_apps"].upsert(
@@ -322,7 +323,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
         return try {
-            val session = supabaseClient.auth.currentSessionOrNull()
+            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return null
             
             // This is a placeholder for actual Supabase Storage implementation

@@ -88,4 +88,12 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
+
+    fun navigateToEdit() {
+        _uiState.update { it.copy(navigateToEdit = true) }
+    }
+
+    fun onEditNavigated() {
+        _uiState.update { it.copy(navigateToEdit = false) }
+    }
 }
