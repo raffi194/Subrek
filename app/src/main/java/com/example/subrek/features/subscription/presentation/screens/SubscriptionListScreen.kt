@@ -106,7 +106,7 @@ fun SubscriptionItem(subscription: Subscription) {
         ) {
             Column {
                 Text(text = subscription.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = subscription.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // 🛍️ SESUDAH: Row tag/SuggestionChip telah dihapus sepenuhnya agar layout lebih minimalis
             }
             Text(
                 text = "${subscription.currency} ${subscription.price}",

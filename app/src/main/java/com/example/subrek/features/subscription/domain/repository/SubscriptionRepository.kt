@@ -56,6 +56,8 @@ interface SubscriptionRepository {
 
     fun getAverageConsumption(): Flow<Double>
 
+    fun getActiveSubscriptionsCount(): Flow<Int>
+
     suspend fun deleteSubscriptionFromLocalAndRemote(id: String)
 
     fun getSubscriptionByIdFlow(id: String): Flow<Subscription?>

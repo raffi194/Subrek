@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
@@ -56,7 +57,6 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val profileState by profileViewModel.uiState.collectAsState()
-    val categories = listOf("Semua", "Hiburan", "Productivity", "Utilitas", "Kesehatan", "Finansial")
 
     // Pemicu reaktif untuk memastikan data profil ter-refresh langsung dari database setiap screen aktif
     LaunchedEffect(Unit) {
@@ -145,67 +145,50 @@ fun DashboardScreen(
 
             // 1. KARTU ESTIMASI RINGKASAN BULANAN
             item {
-                when (val stats = state.statsState) {
-                    is UiState.Success -> {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Slate900)
-                        ) {
-                            Column(modifier = Modifier.padding(24.dp)) {
-                                Text(
-                                    "Estimasi Pengeluaran Bulanan",
-                                    color = Slate400,
-                                    fontSize = 13.sp
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                val formattedPrice = NumberFormat
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Slate900)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(
+                            "Average consumption",
+                            color = Slate400,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AttachMoney,
+                                contentDescription = "Icon Biaya",
+                                tint = Blue500,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            val formattedPrice = if (state.averageConsumption > 0) {
+                                NumberFormat
                                     .getCurrencyInstance(Locale.forLanguageTag("id-ID"))
-                                    .format(stats.data.totalMonthlySpend)
-                                Text(
-                                    formattedPrice,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Black
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text("Segera Tagihan", color = Slate400, fontSize = 11.sp)
-                                        Text(
-                                            "${stats.data.upcomingBillsCount} Layanan",
-                                            color = Amber500,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("Termahal", color = Slate400, fontSize = 11.sp)
-                                        Text(
-                                            stats.data.mostExpensiveSubscription ?: "-",
-                                            color = Rose500,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
-                                        )
-                                    }
-                                }
+                                    .format(state.averageConsumption)
+                            } else {
+                                "Rp 0"
                             }
+                            Text(
+                                formattedPrice,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Black
+                            )
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Aplikasi Aktif: ${state.activeAppsCount}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (state.activeAppsCount > 0) Blue500 else Slate400,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    is UiState.Loading -> Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Blue500)
-                    }
-                    else -> Unit
                 }
             }
 
@@ -236,30 +219,6 @@ fun DashboardScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                 )
-            }
-
-            // 4. FILTER CHIPS
-            item {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(categories) { cat ->
-                        val isSelected = state.selectedCategory == cat
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.changeCategoryFilter(cat) },
-                            label = { Text(cat) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Blue600,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                containerColor = Slate900,
-                                labelColor = Slate400
-                            )
-                        )
-                    }
-                }
             }
 
             // 5. LIST AKTIF DENGAN SWIPE-TO-DELETE
@@ -455,7 +414,7 @@ fun SubscriptionItemRow(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "${sub.category} • ${sub.paymentMethod}",
+                sub.paymentMethod,
                 fontSize = 12.sp,
                 color = Slate400
             )
@@ -538,11 +497,6 @@ fun SubscriptionHistoryItem(subscription: Subscription) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = Slate400 // Muted — menandakan sudah tidak aktif
-            )
-            Text(
-                subscription.category,
-                fontSize = 12.sp,
-                color = Slate400.copy(alpha = 0.6f)
             )
             Spacer(modifier = Modifier.height(6.dp))
             Box(

@@ -88,28 +88,8 @@ fun TambahLanggananScreen(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    // 2. FILTER BAR TABS KATEGORI (Membaca langsung dari state ViewModel yang sudah stabil)
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                    ) {
-                        items(uiState.customCategories, key = { it }) { category ->
-                            val isSelected = uiState.selectedCategory == category
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { viewModel.selectCategory(category) },
-                                label = { Text(category) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            )
-                        }
-                    }
-
                     // 3. RENDERING LIST ITEM KATALOG
                     val filteredItems = uiState.catalogItems.filter { item ->
-                        (uiState.selectedCategory == "All" || item.categoryName == uiState.selectedCategory) &&
                         item.name.contains(uiState.searchQuery, ignoreCase = true)
                     }
 
@@ -137,7 +117,6 @@ fun TambahLanggananScreen(
                                         Spacer(modifier = Modifier.width(16.dp))
                                         Column {
                                             Text(text = app.name, fontWeight = FontWeight.SemiBold)
-                                            Text(text = app.categoryName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                         }
                                     }
                                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
@@ -224,7 +203,6 @@ fun TambahLanggananScreen(
 
             if (showAppDialog) {
                 var appName by remember { mutableStateOf("") }
-                var appCat by remember { mutableStateOf("Hiburan") }
                 var appPrice by remember { mutableStateOf("") }
                 var appCurrency by remember { mutableStateOf("IDR") }
                 var appCycle by remember { mutableStateOf("MONTHLY") }
@@ -294,13 +272,6 @@ fun TambahLanggananScreen(
                                 value = appName,
                                 onValueChange = { appName = it },
                                 label = { Text("Nama Aplikasi *") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            OutlinedTextField(
-                                value = appCat,
-                                onValueChange = { appCat = it },
-                                label = { Text("Kategori *") },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
@@ -375,7 +346,7 @@ fun TambahLanggananScreen(
                                     // Kirim data beserta Uri file lokal ke ViewModel
                                     viewModel.addCustomAppWithImage(
                                         name = appName,
-                                        category = appCat,
+                                        category = "Lainnya", // Kategori internal (tidak ditampilkan di UI)
                                         price = cleanPrice,
                                         currency = appCurrency.ifBlank { "IDR" },
                                         billingCycle = appCycle,

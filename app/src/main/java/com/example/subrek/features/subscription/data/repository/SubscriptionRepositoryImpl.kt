@@ -14,6 +14,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -121,7 +122,15 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override fun getAverageConsumption(): Flow<Double> {
-        return subscriptionDao.getAverageMonthlyConsumption().map { it ?: 0.0 }
+        return subscriptionDao.getAverageMonthlyConsumption()
+            .map { it ?: 0.0 }
+            .catch { emit(0.0) }
+    }
+
+    override fun getActiveSubscriptionsCount(): Flow<Int> {
+        return subscriptionDao.getAllSubscriptions().map { entities ->
+            entities.count { it.status == "ACTIVE" || it.status == "TRIAL" }
+        }.catch { emit(0) }
     }
 
     override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {
@@ -157,21 +166,21 @@ class SubscriptionRepositoryImpl @Inject constructor(
         billingCycle: String,
         startDate: String
     ) {
-        // Update lokal tetap berjalan
+        // 1. Jalankan update lokal terlebih dahulu
         subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
         
-        // Update remote (Push update) dengan proteksi UUID user
+        // 2. Update remote dengan sintaksis DSL Postgrest yang benar
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
             if (userId != null) {
-                supabaseClient.postgrest["subscriptions"].update(
+                supabaseClient.postgrest.from("subscriptions").update(
                     {
                         set("price", price)
                         set("billing_cycle", billingCycle)
                         // 🛍️ Diubah ke next_payment_date agar sinkron dengan skema tabel PostgreSQL Anda
                         set("next_payment_date", startDate) 
-                        set("updated_at", "now()")
+                        set("updated_at", java.time.Instant.now().toString())
                     }
                 ) {
                     // Filter wajib untuk memastikan baris diupdate HANYA milik user yang sedang login (UUID Isolation)
@@ -196,10 +205,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
             if (userId != null) {
-                supabaseClient.postgrest["subscriptions"].update(
+                supabaseClient.postgrest.from("subscriptions").update(
                     {
                         set("status", "ENDED")
-                        set("updated_at", "now()")
+                        set("updated_at", java.time.Instant.now().toString())
                     }
                 ) {
                     filter {

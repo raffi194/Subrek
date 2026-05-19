@@ -20,6 +20,8 @@ data class DashboardUiState(
     val selectedCategory: String = "Semua",
     val userName: String = "User",
     val userAvatarUrl: String? = null,
+    val averageConsumption: Double = 0.0,
+    val activeAppsCount: Int = 0,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -35,6 +37,17 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadDashboardData()
+        observeStats()
+    }
+
+    private fun observeStats() {
+        repository.getAverageConsumption()
+            .onEach { value -> _uiState.update { it.copy(averageConsumption = value) } }
+            .launchIn(viewModelScope)
+
+        repository.getActiveSubscriptionsCount()
+            .onEach { count -> _uiState.update { it.copy(activeAppsCount = count) } }
+            .launchIn(viewModelScope)
     }
 
     private fun loadDashboardData() {
