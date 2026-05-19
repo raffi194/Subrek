@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.subrek.core.theme.Slate950
 import com.example.subrek.features.profile.presentation.viewmodel.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,14 +33,24 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Registrasi Launcher kontrak galeri perangkat untuk mengunggah gambar foto profil
-    val galleryLauncher = rememberLauncherForActivityResult(
+    var fullNameInput by remember(uiState.fullName) { mutableStateOf(uiState.fullName ?: "") }
+    var localSelectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher untuk mendeteksi user memilih file gambar dari galeri HP
+    val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.updateAvatarUri(it) }
+        if (uri != null) localSelectedImageUri = uri
     }
 
-    // Penanganan Navigasi Terpaksa (Pop Up To) saat sesi dibersihkan / logout berhasil
+    LaunchedEffect(uiState.isUpdateSuccess) {
+        if (uiState.isUpdateSuccess) {
+            viewModel.resetUpdateStatus()
+            // Reset local selection after success
+            localSelectedImageUri = null
+        }
+    }
+    
     if (uiState.isLoggedOut) {
         LaunchedEffect(Unit) {
             onNavigateToLogin()
@@ -50,168 +59,138 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Profil Saya", fontWeight = FontWeight.Bold) }
-            )
-        },
-        contentWindowInsets = WindowInsets.statusBars
-    ) { innerPadding ->
+            TopAppBar(title = { Text("Profil Pengguna", fontWeight = FontWeight.Bold) })
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(Slate950)
+                .padding(paddingValues)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 1. COMPONENT AVATAR & IDENTITAS (BERADA DI PALING ATAS)
+            // ---- SEKTOR FOTO PROFIL (AVATAR) ----
             Box(
                 contentAlignment = Alignment.BottomEnd,
-                modifier = Modifier.size(100.dp)
+                modifier = Modifier.size(120.dp)
             ) {
-                AsyncImage(
-                    model = uiState.currentAvatarUrl.ifBlank { "https://placeholder.co/150" },
-                    contentDescription = "Foto Profil User",
+                Box(
                     modifier = Modifier
-                        .size(100.dp)
+                        .fillMaxSize()
                         .clip(CircleShape)
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
-                )
-                if (uiState.isEditMode) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable { galleryLauncher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Ubah Foto",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { imagePickerLauncher.launch("image/*") }, // Membuka file picker gambar
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (localSelectedImageUri != null) {
+                        // Tampilkan pratinjau lokal file gambar yang baru saja dipilih
+                        AsyncImage(
+                            model = localSelectedImageUri,
+                            contentDescription = "Preview Foto Profil",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (!uiState.avatarUrl.isNullOrEmpty()) {
+                        // Tampilkan hasil string URL gambar dari database
+                        AsyncImage(
+                            model = uiState.avatarUrl,
+                            contentDescription = "Foto Profil User",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        // Placeholder jika nama/foto profil user masih kosong
+                        Text(
+                            text = fullNameInput.take(1).uppercase().ifBlank { "U" },
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = uiState.originalName,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = uiState.email,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 2. FORM EDIT PROFILE & LIST ITEMS
-            if (!uiState.isEditMode) {
-                // Menu List Item default sebelum masuk ke mode edit
-                Card(
+                
+                // Icon Edit overlay
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.toggleEditMode(true) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("Edit Profile", fontWeight = FontWeight.SemiBold)
-                        }
-                        Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
-                    }
-                }
-            } else {
-                // Tampilan Form Pengisian Data ketika mode Edit Profile Aktif
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = uiState.currentName,
-                        onValueChange = { viewModel.updateName(it) },
-                        label = { Text("Nama Lengkap") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    // FIELD EMAIL TERKUNCI PERMANEN (Disabled / Read-Only)
-                    OutlinedTextField(
-                        value = uiState.email,
-                        onValueChange = {},
-                        enabled = false, // Memastikan field terkunci secara visual & fungsional
-                        readOnly = true,
-                        label = { Text("Email (Kunci Permanen)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = Color.LightGray,
-                            disabledLabelColor = Color.Gray,
-                            disabledTextColor = Color.DarkGray
-                        )
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
+            
+            Text(
+                text = "Klik foto untuk mengganti file gambar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ---- KOLOM EMAIL (READ-ONLY / TIDAK BISA DIUBAH) ----
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = {},
+                readOnly = true, // Dikunci total
+                label = { Text("Alamat Email (Permanen)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = Color.DarkGray,
+                    disabledTextColor = Color.LightGray
+                )
+            )
+
+            // ---- KOLOM NAMA LENGKAP (DAPAT DIUBAH DINAMIS) ----
+            OutlinedTextField(
+                value = fullNameInput,
+                onValueChange = { fullNameInput = it },
+                label = { Text("Nama Lengkap") },
+                placeholder = { Text("Masukkan nama lengkap Anda") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 3. LOGIKA DYNAMIC CONFIRMATION BUTTON
-            if (uiState.isEditMode) {
-                Button(
-                    onClick = {
-                        if (uiState.hasChanges) {
-                            viewModel.saveProfileChanges()
-                        } else {
-                            viewModel.toggleEditMode(false)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    // Teks Button Berubah Secara Dinamis berdasarkan ketersediaan perubahan data
-                    Text(
-                        text = if (uiState.hasChanges) "Konfirmasi Perubahan" else "Kembali",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // 4. LIST ITEM - LOGOUT BUTTON (BERADA DI POSISI BAWAH)
+            // ---- TOMBOL SIMPAN UTAMA ----
             Button(
-                onClick = { viewModel.logout() },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                onClick = {
+                    viewModel.updateProfileData(
+                        newFullName = fullNameInput,
+                        newImageUri = localSelectedImageUri
+                    )
+                },
+                enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(bottom = 16.dp),
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Keluar Akun (Logout)", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Perbarui Profil", fontWeight = FontWeight.Bold)
                 }
+            }
+            
+            // ---- TOMBOL LOGOUT ----
+            TextButton(
+                onClick = { viewModel.logout() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Keluar Akun", fontWeight = FontWeight.Bold)
             }
         }
     }

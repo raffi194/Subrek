@@ -15,66 +15,67 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val subscriptionRepository: SubscriptionRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        loadUserProfile()
+        loadProfile()
     }
 
-    private fun loadUserProfile() {
-        viewModelScope.launch {
-            // Simulasi pengambilan data profil. 
-            // Pada tahap berikutnya, ini akan mengambil data asli dari Supabase/Room.
-            _uiState.update { 
-                it.copy(
-                    id = "user-123",
-                    originalName = "Muhamad Raffi",
-                    currentName = "Muhamad Raffi",
-                    email = "raffi.dev@example.com",
-                    originalAvatarUrl = "https://placeholder.co/150",
-                    currentAvatarUrl = "https://placeholder.co/150"
-                )
-            }
-        }
-    }
-
-    fun toggleEditMode(enabled: Boolean) {
-        _uiState.update { it.copy(isEditMode = enabled) }
-    }
-
-    fun updateName(newName: String) {
-        _uiState.update { it.copy(currentName = newName) }
-    }
-
-    fun updateAvatarUri(uri: Uri) {
-        // Uri dikonversi menjadi string untuk pratinjau lokal sebelum diunggah
-        _uiState.update { it.copy(currentAvatarUrl = uri.toString()) }
-    }
-
-    fun saveProfileChanges() {
+    fun loadProfile() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val state = _uiState.value
-                // TODO: Implementasi repository.updateProfile(state.id, state.currentName, state.currentAvatarUrl)
-                
-                _uiState.update { 
-                    it.copy(
-                        originalName = state.currentName,
-                        originalAvatarUrl = state.currentAvatarUrl,
-                        isEditMode = false,
-                        isLoading = false
-                    )
-                }
+                val userProfile = authRepository.getCurrentUserProfile()
+                _uiState.update { it.copy(
+                    id = userProfile.id,
+                    email = userProfile.email,
+                    fullName = userProfile.fullName,
+                    avatarUrl = userProfile.avatarUrl,
+                    isLoading = false
+                )}
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
             }
         }
+    }
+
+    fun updateProfileData(newFullName: String, newImageUri: Uri?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                var finalAvatarUrl = _uiState.value.avatarUrl
+
+                // 1. Jika ada file gambar baru yang di-pick, upload ke Supabase Storage Bucket
+                if (newImageUri != null) {
+                    finalAvatarUrl = authRepository.uploadAvatarToStorage(newImageUri)
+                }
+
+                // 2. Update kolom full_name dan avatar_url ke database public.profiles
+                authRepository.updateProfileFields(
+                    fullName = newFullName,
+                    avatarUrl = finalAvatarUrl
+                ).onSuccess {
+                    _uiState.update { it.copy(
+                        fullName = newFullName,
+                        avatarUrl = finalAvatarUrl,
+                        isLoading = false,
+                        isUpdateSuccess = true
+                    )}
+                }.onFailure { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun resetUpdateStatus() {
+        _uiState.update { it.copy(isUpdateSuccess = false, errorMessage = null) }
     }
 
     fun logout() {

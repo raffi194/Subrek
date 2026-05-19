@@ -1,5 +1,5 @@
-package com.example.subrek.features.auth.domain.repository
-
+import android.net.Uri
+import com.example.subrek.features.auth.domain.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
@@ -7,4 +7,8 @@ interface AuthRepository {
     suspend fun signUp(email: String, password: String): Result<Unit>
     suspend fun signIn(email: String, password: String): Result<Unit>
     suspend fun signOut(): Result<Unit>
+    
+    suspend fun getCurrentUserProfile(): UserProfile
+    suspend fun updateProfileFields(fullName: String, avatarUrl: String?): Result<Unit>
+    suspend fun uploadAvatarToStorage(uri: Uri): String
 }
