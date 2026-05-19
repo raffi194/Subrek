@@ -170,14 +170,16 @@ fun TambahLanggananScreen(
                         Button(
                             onClick = {
                                 val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
-                                    viewModel.saveNewSubscription(
-                                        name = selectedAppForForm!!.name,
-                                        iconUrl = selectedAppForForm!!.iconUrl,
-                                        price = cleanPrice,
-                                        cycle = selectedCycle,
-                                        date = startDateInput.ifBlank { "2026-01-01" },
-                                        isTrial = isFreeTrial
-                                    )
+                                viewModel.saveNewSubscription(
+                                    name = selectedAppForForm!!.name,
+                                    iconUrl = selectedAppForForm!!.iconUrl,
+                                    price = cleanPrice,
+                                    currency = "IDR", // Default valuta disesuaikan skema tabel
+                                    cycle = selectedCycle,
+                                    paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
+                                    date = startDateInput.ifBlank { "2026-05-20" },
+                                    isTrial = isFreeTrial
+                                )
                             },
                             modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 8.dp)
                         ) {

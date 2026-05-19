@@ -53,9 +53,28 @@ class TambahLanggananViewModel @Inject constructor(
         }
     }
 
-    fun saveNewSubscription(name: String, iconUrl: String?, price: Double, cycle: String, date: String, isTrial: Boolean) {
+    fun saveNewSubscription(
+        name: String,
+        iconUrl: String?,
+        price: Double,
+        currency: String,
+        cycle: String,
+        paymentMethod: String,
+        date: String,
+        isTrial: Boolean
+    ) {
         viewModelScope.launch {
-            repository.saveSubscription(name, iconUrl, price, cycle, date, isTrial)
+            repository.saveSubscriptionExtended(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                price = price,
+                currency = currency.ifBlank { "IDR" },
+                billingCycle = cycle,
+                paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
+                nextPaymentDate = date,
+                status = if (isTrial) "TRIAL" else "ACTIVE",
+                iconUrl = iconUrl
+            )
             _uiState.update { it.copy(isSaveSuccess = true) }
         }
     }
