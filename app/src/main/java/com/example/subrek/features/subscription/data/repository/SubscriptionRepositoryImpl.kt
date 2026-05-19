@@ -1,7 +1,6 @@
 package com.example.subrek.features.subscription.data.repository
 
 import com.example.subrek.features.subscription.data.local.LocalAppEntity
-import com.example.subrek.features.subscription.data.local.LocalCategoryEntity
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
 import com.example.subrek.features.subscription.data.mapper.toDomain
 import com.example.subrek.features.subscription.data.mapper.toDto
@@ -39,7 +38,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertSubscription(subscription: Subscription) {
-        // Simpan ke lokal dengan flag isDirty = true agar bisa di-sync kemudian
         subscriptionDao.insertSubscription(subscription.toEntity(isDirty = true))
     }
 
@@ -52,20 +50,14 @@ class SubscriptionRepositoryImpl @Inject constructor(
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return Result.failure(Exception("User not authenticated"))
 
-            // 1. PUSH PHASE: Unggah data lokal yang "dirty" (berubah saat offline)
             val dirtyEntities = subscriptionDao.getDirtySubscriptions()
             if (dirtyEntities.isNotEmpty()) {
                 val dtosToUpload = dirtyEntities.map { it.toDto(userId) }
-                
-                // Upsert ke Supabase cloud (Insert atau Update berdasarkan Primary Key ID)
                 supabaseClient.postgrest["subscriptions"].upsert(dtosToUpload)
-                
-                // Setelah sukses diunggah, matikan flag dirty di database lokal
                 val cleanedEntities = dirtyEntities.map { it.copy(isDirty = false) }
                 subscriptionDao.insertSubscriptions(cleanedEntities)
             }
 
-            // 2. PULL PHASE: Ambil data terbaru dari cloud Supabase
             val response = supabaseClient.postgrest["subscriptions"]
                 .select(columns = Columns.ALL) {
                     filter {
@@ -76,17 +68,12 @@ class SubscriptionRepositoryImpl @Inject constructor(
             val remoteDtos = response.decodeList<SubscriptionDto>()
 
             if (remoteDtos.isNotEmpty()) {
-                // Ubah DTO dari cloud menjadi entity Room lokal
                 val localEntities = remoteDtos.map { it.toEntity() }
-                
-                // Simpan/SINKRONKAN ke SQLite lokal
                 subscriptionDao.insertSubscriptions(localEntities)
             }
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log galat jika koneksi internet terputus atau API bermasalah.
-            // Arsitektur Offline-First menjamin aplikasi tetap bisa beroperasi menggunakan cache lokal.
             e.printStackTrace()
             Result.failure(e)
         }
@@ -94,7 +81,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     override suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription> {
         val targetLocalDate = LocalDate.now().plusDays(days.toLong())
-        val formattedTarget = targetLocalDate.format(DateTimeFormatter.ISO_LOCAL_DATE) // "YYYY-MM-DD"
+        val formattedTarget = targetLocalDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
         return subscriptionDao.getSubscriptionsExpiringOn(formattedTarget).map {
             it.toDomain()
@@ -134,10 +121,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {
-        // 1. Hapus di lokal
         subscriptionDao.deleteSubscriptionById(id)
-        
-        // 2. Hapus di remote
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
@@ -151,8 +135,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Jika gagal remote, kita biarkan saja dulu karena sudah terhapus di lokal
-            // Idealnya ada mekanisme sync delete
         }
     }
 
@@ -166,10 +148,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         billingCycle: String,
         startDate: String
     ) {
-        // 1. Jalankan update lokal terlebih dahulu
         subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
-        
-        // 2. Update remote dengan sintaksis DSL Postgrest yang benar
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
@@ -178,12 +157,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     {
                         set("price", price)
                         set("billing_cycle", billingCycle)
-                        // 🛍️ Diubah ke next_payment_date agar sinkron dengan skema tabel PostgreSQL Anda
                         set("next_payment_date", startDate) 
                         set("updated_at", java.time.Instant.now().toString())
                     }
                 ) {
-                    // Filter wajib untuk memastikan baris diupdate HANYA milik user yang sedang login (UUID Isolation)
                     filter {
                         eq("id", id)
                         eq("user_id", userId)
@@ -197,10 +174,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun terminateSubscription(id: String) {
-        // Update lokal
         subscriptionDao.terminateSubscription(id)
-
-        // Update remote
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
@@ -222,39 +196,8 @@ class SubscriptionRepositoryImpl @Inject constructor(
         }
     }
 
-    // --- Implementation Step 5.4 ---
-
-    override suspend fun insertCategory(category: LocalCategoryEntity) {
-        // 1. Simpan lokal terlebih dahulu (offline-first)
-        subscriptionDao.insertCategory(category)
-
-        // 2. Push ke Supabase cloud
-        try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id ?: return
-
-            supabaseClient.postgrest["user_categories"].upsert(
-                mapOf(
-                    "id" to category.id,
-                    "user_id" to userId,
-                    "name" to category.name
-                )
-            )
-        } catch (e: Exception) {
-            // Gagal sync tidak menghalangi operasi lokal (offline-first)
-            e.printStackTrace()
-        }
-    }
-
-    override fun getCustomCategories(): Flow<List<LocalCategoryEntity>> {
-        return subscriptionDao.getCustomCategories()
-    }
-
     override suspend fun insertCustomApp(app: LocalAppEntity) {
-        // 1. Simpan lokal terlebih dahulu (offline-first)
         subscriptionDao.insertCustomApp(app)
-
-        // 2. Push ke Supabase cloud
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return
@@ -292,10 +235,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
             price = price,
             currency = "IDR",
             billingCycle = cycle,
-            category = "Other",
             paymentMethod = "Manual",
             nextPaymentDate = date,
-            status = if (isTrial) "TRIAL" else "ACTIVE"
+            status = if (isTrial) "TRIAL" else "ACTIVE",
+            iconUrl = iconUrl
         )
     }
 
@@ -305,13 +248,11 @@ class SubscriptionRepositoryImpl @Inject constructor(
         price: Double,
         currency: String,
         billingCycle: String,
-        category: String,
         paymentMethod: String,
         nextPaymentDate: String,
         status: String,
         iconUrl: String?
     ) {
-        // Ambil ID user aktif untuk disuntikkan secara aman saat proses konversi push remote
         val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
         val userId = session?.user?.id
 
@@ -323,7 +264,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
             billingCycle = com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle),
             startDate = LocalDate.parse(nextPaymentDate),
             nextPaymentDate = LocalDate.parse(nextPaymentDate),
-            category = category,
             paymentMethod = paymentMethod,
             isTrial = status == "TRIAL",
             status = com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status),
@@ -332,32 +272,29 @@ class SubscriptionRepositoryImpl @Inject constructor(
             iconUrl = iconUrl
         )
         
-        // 1. Amankan penyimpanan lokal terlebih dahulu
         insertSubscription(subscription)
 
-        // 2. Jika user online, langsung daftarkan aplikasi baru ini ke cloud secara spesifik menggunakan UUID miliknya
         if (userId != null) {
             try {
                 val dto = SubscriptionDto(
                     id = id,
-                    userId = userId, // Memastikan data terikat khusus ke UUID user penambah data
+                    userId = userId,
                     name = name,
                     price = price,
                     currency = currency,
                     billingCycle = billingCycle,
                     nextPaymentDate = nextPaymentDate,
-                    category = category,
+                    category = "Other",
                     paymentMethod = paymentMethod,
                     isTrial = status == "TRIAL",
                     isGhostSubscription = false,
                     status = status,
                     createdAt = LocalDate.now().toString(),
-                    iconUrl = iconUrl // Nilai URL dari Supabase Storage masuk ke PostgreSQL
+                    iconUrl = iconUrl
                 )
                 supabaseClient.postgrest["subscriptions"].insert(dto)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Kegagalan jaringan tidak merusak app lokal karena Arsitektur Offline-First
             }
         }
     }
@@ -366,11 +303,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         return try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id ?: return null
-            
-            // This is a placeholder for actual Supabase Storage implementation
-            // In a real scenario, you'd use supabaseClient.storage["app-icons"].upload(...)
-            // and return the public URL.
-            "https://placeholder.co/100" // Fallback placeholder
+            "https://placeholder.co/100"
         } catch (e: Exception) {
             e.printStackTrace()
             null

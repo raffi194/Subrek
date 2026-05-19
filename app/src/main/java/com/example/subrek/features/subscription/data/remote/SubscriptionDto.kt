@@ -23,8 +23,6 @@ data class SubscriptionDto(
     // 🛍️ Dihapus karena di PostgreSQL hanya menggunakan next_payment_date
     @SerialName("next_payment_date")
     val nextPaymentDate: String,
-    @SerialName("category")
-    val category: String,
     @SerialName("payment_method")
     val paymentMethod: String,
     @SerialName("is_trial")

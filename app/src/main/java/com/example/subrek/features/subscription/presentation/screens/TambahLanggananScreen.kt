@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,7 +34,6 @@ fun TambahLanggananScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedAppForForm by remember { mutableStateOf<CatalogItem?>(null) }
     
-    var showCatDialog by remember { mutableStateOf(false) }
     var showAppDialog by remember { mutableStateOf(false) }
 
     // State Input Form Detail Berlangganan
@@ -59,9 +57,7 @@ fun TambahLanggananScreen(
             TopAppBar(
                 title = { Text("Tambah Langganan", fontWeight = FontWeight.Bold) },
                 actions = {
-                    TextButton(onClick = { showCatDialog = true }) { 
-                        Text("+ Kategori", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
-                    }
+                    // 🛠️ Button "+ Kategori" telah dihapus sepenuhnya di sini
                     IconButton(onClick = { showAppDialog = true }) { 
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah App Baru") 
                     }
@@ -88,7 +84,7 @@ fun TambahLanggananScreen(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    // 3. RENDERING LIST ITEM KATALOG
+                    // 2. RENDERING LIST ITEM KATALOG
                     val filteredItems = uiState.catalogItems.filter { item ->
                         item.name.contains(uiState.searchQuery, ignoreCase = true)
                     }
@@ -125,7 +121,7 @@ fun TambahLanggananScreen(
                         }
                     }
                 } else {
-                    // 4. FORM DETAIL BERLANGGANAN (DIBUKA SAAT KATALOG DI-KLIK)
+                    // 3. FORM DETAIL BERLANGGANAN (DIBUKA SAAT KATALOG DI-KLIK)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize().padding(top = 8.dp)
@@ -139,7 +135,6 @@ fun TambahLanggananScreen(
                         OutlinedTextField(value = priceInput, onValueChange = { priceInput = it }, label = { Text("Biaya Berlangganan (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(value = paymentMethod, onValueChange = { paymentMethod = it }, label = { Text("Metode Pembayaran") }, modifier = Modifier.fillMaxWidth())
 
-                        // Siklus Penagihan: 3 Opsi Dropdown
                         Box(modifier = Modifier.fillMaxWidth()) {
                             ExposedDropdownMenuBox(expanded = isCycleDropdownExpanded, onExpandedChange = { isCycleDropdownExpanded = !isCycleDropdownExpanded }) {
                                 OutlinedTextField(
@@ -167,16 +162,15 @@ fun TambahLanggananScreen(
 
                         Button(
                             onClick = {
-                                // Proteksi konversi string kosong/invalid menjadi numeric fallback 0.0 agar tidak crash
                                 val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
-                                viewModel.saveNewSubscription(
-                                    name = selectedAppForForm!!.name,
-                                    iconUrl = selectedAppForForm!!.iconUrl,
-                                    price = cleanPrice,
-                                    cycle = selectedCycle,
-                                    date = startDateInput.ifBlank { "2026-01-01" },
-                                    isTrial = isFreeTrial
-                                )
+                                    viewModel.saveNewSubscription(
+                                        name = selectedAppForForm!!.name,
+                                        iconUrl = selectedAppForForm!!.iconUrl,
+                                        price = cleanPrice,
+                                        cycle = selectedCycle,
+                                        date = startDateInput.ifBlank { "2026-01-01" },
+                                        isTrial = isFreeTrial
+                                    )
                             },
                             modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 8.dp)
                         ) {
@@ -189,18 +183,8 @@ fun TambahLanggananScreen(
             }
 
             // =========================================================================
-            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM (DATA ISOLATION)
+            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM (DIALOG KATEGORI TELAH DIHAPUS)
             // =========================================================================
-            if (showCatDialog) {
-                var catName by remember { mutableStateOf("") }
-                AlertDialog(
-                    onDismissRequest = { showCatDialog = false },
-                    title = { Text("Tambah Kategori Baru") },
-                    text = { OutlinedTextField(value = catName, onValueChange = { catName = it }, label = { Text("Nama Kategori") }) },
-                    confirmButton = { Button(onClick = { if(catName.isNotBlank()){ viewModel.addCustomCategory(catName); showCatDialog = false } }) { Text("Tambah") } }
-                )
-            }
-
             if (showAppDialog) {
                 var appName by remember { mutableStateOf("") }
                 var appPrice by remember { mutableStateOf("") }
@@ -210,10 +194,8 @@ fun TambahLanggananScreen(
                 var appDate by remember { mutableStateOf("2026-05-19") }
                 var isAppCycleExpanded by remember { mutableStateOf(false) }
 
-                // State untuk menyimpan URI gambar lokal hasil pick file
                 var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
-                // Launcher untuk membuka Gallery / File Picker mengambil gambar
                 val imagePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                     contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
                 ) { uri: android.net.Uri? ->
@@ -228,7 +210,6 @@ fun TambahLanggananScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // ---- COMPONENT UPLOAD GAMBAR APP PROFILE ----
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
@@ -266,7 +247,6 @@ fun TambahLanggananScreen(
                                     )
                                 }
                             }
-                            // --------------------------------------------
 
                             OutlinedTextField(
                                 value = appName,
@@ -294,7 +274,6 @@ fun TambahLanggananScreen(
                                 )
                             }
 
-                            // Dropdown Siklus Penagihan di dalam Dialog
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 ExposedDropdownMenuBox(
                                     expanded = isAppCycleExpanded,
@@ -343,10 +322,8 @@ fun TambahLanggananScreen(
                                 if (appName.isNotBlank() && appPrice.isNotBlank()) {
                                     val cleanPrice = appPrice.replace(",", ".").toDoubleOrNull() ?: 0.0
 
-                                    // Kirim data beserta Uri file lokal ke ViewModel
                                     viewModel.addCustomAppWithImage(
                                         name = appName,
-                                        category = "Lainnya", // Kategori internal (tidak ditampilkan di UI)
                                         price = cleanPrice,
                                         currency = appCurrency.ifBlank { "IDR" },
                                         billingCycle = appCycle,

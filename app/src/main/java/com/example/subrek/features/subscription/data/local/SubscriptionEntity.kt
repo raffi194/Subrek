@@ -24,16 +24,13 @@ data class SubscriptionEntity(
     val currency: String,
     
     @ColumnInfo(name = "billing_cycle")
-    val billingCycle: String, // Mengonversi Enum BillingCycle ke String
+    val billingCycle: String, 
     
     @ColumnInfo(name = "start_date")
-    val startDate: String, // Mengonversi LocalDate ke String (Format: YYYY-MM-DD)
+    val startDate: String, 
     
     @ColumnInfo(name = "next_payment_date")
-    val nextPaymentDate: String, // Mengonversi LocalDate ke String (Format: YYYY-MM-DD)
-    
-    @ColumnInfo(name = "category")
-    val category: String,
+    val nextPaymentDate: String, 
     
     @ColumnInfo(name = "payment_method")
     val paymentMethod: String,
@@ -45,20 +42,20 @@ data class SubscriptionEntity(
     val isGhostSubscription: Boolean = false,
     
     @ColumnInfo(name = "status")
-    val status: String, // Mengonversi Enum SubscriptionStatus ke String
+    val status: String, 
 
     @ColumnInfo(name = "unconfirmed_cycles_count")
     val unconfirmedCyclesCount: Int = 0,
 
     @ColumnInfo(name = "created_at")
-    val createdAt: String, // Format: YYYY-MM-DD
+    val createdAt: String, 
 
     @ColumnInfo(name = "is_dirty")
-    val isDirty: Boolean = false, // True jika data berubah di lokal dan belum sinkron ke cloud
+    val isDirty: Boolean = false, 
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis(), // Timestamp untuk keperluan validasi sinkronisasi
+    val updatedAt: Long = System.currentTimeMillis(), 
 
     @ColumnInfo(name = "icon_url")
-    val iconUrl: String? = null // 🛠️ Tambahkan kolom lokal untuk menampung URL Gambar
+    val iconUrl: String? = null
 )

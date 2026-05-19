@@ -14,12 +14,11 @@ data class Subscription(
     val billingCycle: BillingCycle, // WEEKLY, MONTHLY, YEARLY
     val startDate: LocalDate,
     val nextPaymentDate: LocalDate,
-    val category: String,
     val paymentMethod: String,
     val isTrial: Boolean,
     val isGhostSubscription: Boolean = false,
     val status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
-    val unconfirmedCyclesCount: Int = 0, // Pelacak jumlah siklus penagihan yang tidak dikonfirmasi pengguna
+    val unconfirmedCyclesCount: Int = 0, 
     val createdAt: LocalDate,
     val updatedAt: LocalDate,
     val iconUrl: String? = null
@@ -37,5 +36,5 @@ enum class SubscriptionStatus {
     GRACE_PERIOD,
     PAUSED,
     CANCELLED,
-    NEEDS_REVIEW // Penambahan status NEEDS_REVIEW untuk menandai langganan hantu
+    NEEDS_REVIEW
 }
