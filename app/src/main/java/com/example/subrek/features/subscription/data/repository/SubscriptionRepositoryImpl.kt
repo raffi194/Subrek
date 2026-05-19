@@ -1,5 +1,7 @@
 package com.example.subrek.features.subscription.data.repository
 
+import com.example.subrek.features.subscription.data.local.LocalAppEntity
+import com.example.subrek.features.subscription.data.local.LocalCategoryEntity
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
 import com.example.subrek.features.subscription.data.mapper.toDomain
 import com.example.subrek.features.subscription.data.mapper.toDto
@@ -210,21 +212,56 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     // --- Implementation Step 5.4 ---
 
-    override suspend fun insertCategory(category: com.example.subrek.features.subscription.data.local.LocalCategoryEntity) {
+    override suspend fun insertCategory(category: LocalCategoryEntity) {
+        // 1. Simpan lokal terlebih dahulu (offline-first)
         subscriptionDao.insertCategory(category)
-        // Note: Remote sync for custom categories could be added here similar to subscriptions
+
+        // 2. Push ke Supabase cloud
+        try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id ?: return
+
+            supabaseClient.postgrest["user_categories"].upsert(
+                mapOf(
+                    "id" to category.id,
+                    "user_id" to userId,
+                    "name" to category.name
+                )
+            )
+        } catch (e: Exception) {
+            // Gagal sync tidak menghalangi operasi lokal (offline-first)
+            e.printStackTrace()
+        }
     }
 
-    override fun getCustomCategories(): Flow<List<com.example.subrek.features.subscription.data.local.LocalCategoryEntity>> {
+    override fun getCustomCategories(): Flow<List<LocalCategoryEntity>> {
         return subscriptionDao.getCustomCategories()
     }
 
-    override suspend fun insertCustomApp(app: com.example.subrek.features.subscription.data.local.LocalAppEntity) {
+    override suspend fun insertCustomApp(app: LocalAppEntity) {
+        // 1. Simpan lokal terlebih dahulu (offline-first)
         subscriptionDao.insertCustomApp(app)
-        // Note: Remote sync for custom apps could be added here
+
+        // 2. Push ke Supabase cloud
+        try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id ?: return
+
+            supabaseClient.postgrest["user_apps"].upsert(
+                mapOf(
+                    "id" to app.id,
+                    "user_id" to userId,
+                    "name" to app.name,
+                    "icon_url" to app.iconUrl,
+                    "category_name" to app.categoryName
+                )
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    override fun getCustomApps(): Flow<List<com.example.subrek.features.subscription.data.local.LocalAppEntity>> {
+    override fun getCustomApps(): Flow<List<LocalAppEntity>> {
         return subscriptionDao.getCustomApps()
     }
 

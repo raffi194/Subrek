@@ -15,6 +15,7 @@ import javax.inject.Inject
 data class DashboardUiState(
     val rawSubscriptions: List<Subscription> = emptyList(),
     val subscriptionsList: List<Subscription> = emptyList(),
+    val subscriptionHistory: List<Subscription> = emptyList(),
     val statsState: UiState<DashboardStats> = UiState.Loading,
     val selectedCategory: String = "Semua",
     val userName: String = "User",
@@ -51,6 +52,14 @@ class DashboardViewModel @Inject constructor(
                         isLoading = false
                     ) }
                     applyFilter()
+                }
+        }
+        // Load riwayat langganan yang sudah berakhir (status = ENDED)
+        viewModelScope.launch {
+            repository.getSubscriptionHistory()
+                .catch { /* silent fail, history bukan data kritis */ }
+                .collect { history ->
+                    _uiState.update { it.copy(subscriptionHistory = history) }
                 }
         }
     }

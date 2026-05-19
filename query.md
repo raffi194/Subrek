@@ -420,3 +420,140 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: STEP 5.2 SWIPE-TO-DELETE & HISTORY (Gap Fix)
+-- =========================================================================
+
+-- Memastikan policy DELETE pada subscriptions sudah ada (idempoten)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'subscriptions'
+          AND policyname = 'Pengguna hanya dapat menghapus data langganan miliknya sendiri'
+    ) THEN
+        CREATE POLICY "Pengguna hanya dapat menghapus data langganan miliknya sendiri"
+        ON public.subscriptions
+        FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- View untuk mengambil riwayat langganan yang sudah berakhir (status = 'ENDED')
+-- Digunakan oleh Card Riwayat Subscriptions di DashboardScreen
+CREATE OR REPLACE VIEW public.user_subscription_history AS
+SELECT
+    id,
+    user_id,
+    name,
+    price,
+    currency,
+    billing_cycle,
+    category,
+    payment_method,
+    status,
+    next_payment_date,
+    created_at,
+    updated_at
+FROM public.subscriptions
+WHERE status = 'ENDED';
+
+-- =========================================================================
+-- TAMBAHAN KUMULATIF: STEP 5.4 SYNC KATALOG KUSTOM KE SUPABASE (Gap Fix)
+-- =========================================================================
+
+-- Memastikan kolom 'id' pada user_categories menerima tipe text (UUID dari Android)
+-- Android menggunakan UUID.randomUUID().toString() yang menghasilkan tipe text/varchar
+ALTER TABLE public.user_categories
+    ALTER COLUMN id TYPE TEXT;
+
+ALTER TABLE public.user_apps
+    ALTER COLUMN id TYPE TEXT;
+
+-- Policy UPDATE untuk user_categories (untuk upsert dari Android client)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'user_categories'
+          AND policyname = 'User bisa memperbarui kategori kustom miliknya'
+    ) THEN
+        CREATE POLICY "User bisa memperbarui kategori kustom miliknya"
+        ON public.user_categories
+        FOR UPDATE USING (auth.uid() = user_id)
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Policy UPDATE untuk user_apps (untuk upsert dari Android client)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'user_apps'
+          AND policyname = 'User bisa memperbarui aplikasi kustom miliknya'
+    ) THEN
+        CREATE POLICY "User bisa memperbarui aplikasi kustom miliknya"
+        ON public.user_apps
+        FOR UPDATE USING (auth.uid() = user_id)
+        WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Policy DELETE untuk user_categories (jika user ingin menghapus kategori kustom)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'user_categories'
+          AND policyname = 'User bisa menghapus kategori kustom miliknya'
+    ) THEN
+        CREATE POLICY "User bisa menghapus kategori kustom miliknya"
+        ON public.user_categories
+        FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Policy DELETE untuk user_apps (jika user ingin menghapus app kustom)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'user_apps'
+          AND policyname = 'User bisa menghapus aplikasi kustom miliknya'
+    ) THEN
+        CREATE POLICY "User bisa menghapus aplikasi kustom miliknya"
+        ON public.user_apps
+        FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- Fungsi helper untuk sync batch katalog kustom dari Android ke Supabase
+-- Dipanggil saat online setelah insert lokal berhasil
+CREATE OR REPLACE FUNCTION public.upsert_user_category(
+    p_id TEXT,
+    p_name TEXT
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO public.user_categories (id, user_id, name)
+    VALUES (p_id, auth.uid(), p_name)
+    ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.upsert_user_app(
+    p_id TEXT,
+    p_name TEXT,
+    p_icon_url TEXT,
+    p_category_name TEXT
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO public.user_apps (id, user_id, name, icon_url, category_name)
+    VALUES (p_id, auth.uid(), p_name, p_icon_url, p_category_name)
+    ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            icon_url = EXCLUDED.icon_url,
+            category_name = EXCLUDED.category_name;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
