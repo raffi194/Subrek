@@ -1,5 +1,6 @@
 package com.example.subrek.features.subscription.presentation.screens
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,12 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.subrek.features.subscription.domain.model.CatalogItem
 import com.example.subrek.features.subscription.presentation.viewmodel.TambahLanggananViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +38,7 @@ fun TambahLanggananScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     var selectedAppForForm by remember { mutableStateOf<CatalogItem?>(null) }
     
     var showAppDialog by remember { mutableStateOf(false) }
@@ -146,7 +153,7 @@ fun TambahLanggananScreen(
                                     modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                 )
                                 ExposedDropdownMenu(expanded = isCycleDropdownExpanded, onDismissRequest = { isCycleDropdownExpanded = false }) {
-                                    listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { opt ->
+                                    listOf("MONTHLY", "YEARLY").forEach { opt ->
                                         DropdownMenuItem(text = { Text(opt) }, onClick = { selectedCycle = opt; isCycleDropdownExpanded = false })
                                     }
                                 }
@@ -201,6 +208,19 @@ fun TambahLanggananScreen(
                 ) { uri: android.net.Uri? ->
                     selectedImageUri = uri
                 }
+
+                // 🛠️ PERBAIKAN: Integrasi Native DatePickerDialog untuk Form Kustom Dialog
+                val calendar = Calendar.getInstance()
+                val datePickerDialog = DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        val selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                        appDate = selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                )
 
                 AlertDialog(
                     onDismissRequest = { showAppDialog = false },
@@ -291,7 +311,7 @@ fun TambahLanggananScreen(
                                         expanded = isAppCycleExpanded,
                                         onDismissRequest = { isAppCycleExpanded = false }
                                     ) {
-                                        listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { opt ->
+                                        listOf("MONTHLY", "YEARLY").forEach { opt ->
                                             DropdownMenuItem(
                                                 text = { Text(opt) },
                                                 onClick = { appCycle = opt; isAppCycleExpanded = false }
@@ -308,11 +328,18 @@ fun TambahLanggananScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
+                            // 🛠️ PERBAIKAN: Mengubah input manual tanggal menjadi visual dialog picker
                             OutlinedTextField(
                                 value = appDate,
-                                onValueChange = { appDate = it },
-                                label = { Text("Tanggal Mulai (YYYY-MM-DD) *") },
-                                modifier = Modifier.fillMaxWidth()
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Tanggal Mulai Penagihan *") },
+                                trailingIcon = {
+                                    IconButton(onClick = { datePickerDialog.show() }) {
+                                        Icon(imageVector = Icons.Default.DateRange, contentDescription = "Pilih Tanggal")
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() }
                             )
                         }
                     },

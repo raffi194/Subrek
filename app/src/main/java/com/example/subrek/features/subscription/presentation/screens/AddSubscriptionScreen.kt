@@ -164,7 +164,7 @@ fun AddSubscriptionScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    BillingCycle.values().forEach { cycle ->
+                    BillingCycle.values().filter { it != BillingCycle.WEEKLY }.forEach { cycle ->
                         val isSelected = formState.billingCycle == cycle
                         Button(
                             onClick = { viewModel.onBillingCycleChange(cycle) },

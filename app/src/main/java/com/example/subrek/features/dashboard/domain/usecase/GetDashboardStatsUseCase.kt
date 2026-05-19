@@ -16,7 +16,6 @@ class GetDashboardStatsUseCase @Inject constructor() {
         
         val totalMonthlySpend = activeSubs.sumOf { sub ->
             when (sub.billingCycle.name) {
-                "WEEKLY" -> sub.price * 4.33
                 "YEARLY" -> sub.price / 12.0
                 else -> sub.price
             }

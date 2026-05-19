@@ -29,7 +29,6 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
     val cycleSpends = subscriptions.groupBy { it.billingCycle.name }.mapValues { entry ->
         entry.value.sumOf { sub ->
             when (sub.billingCycle.name) {
-                "WEEKLY" -> sub.price * 4.33
                 "YEARLY" -> sub.price / 12.0
                 else -> sub.price
             }

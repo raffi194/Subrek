@@ -154,7 +154,7 @@ fun SubscriptionDetailScreen(
                             expanded = isDropdownExpanded,
                             onDismissRequest = { isDropdownExpanded = false }
                         ) {
-                            listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { cycle ->
+                            listOf("MONTHLY", "YEARLY").forEach { cycle ->
                                 DropdownMenuItem(
                                     text = { Text(cycle) },
                                     onClick = {

@@ -15,7 +15,6 @@ class GetMonthlyReportUseCase @Inject constructor() {
         // 1. Agregasi Total Pengeluaran Saat Ini
         val totalSpend = validSubs.sumOf { sub ->
             when (sub.billingCycle.name) {
-                "WEEKLY" -> sub.price * 4.33
                 "YEARLY" -> sub.price / 12.0
                 else -> sub.price
             }

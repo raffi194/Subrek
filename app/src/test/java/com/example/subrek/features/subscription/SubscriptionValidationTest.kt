@@ -44,22 +44,20 @@ class SubscriptionValidationTest {
     fun `calculateAverageMonthlyConsumption_berbagaiSiklus_harusTepat`() {
         val today = LocalDate.now()
         val listSubscriptions = listOf(
-            createMockSubscription("1", "App A", 10000.0, BillingCycle.WEEKLY, today),  // 10000 * 4.33 = 43300
             createMockSubscription("2", "App B", 50000.0, BillingCycle.MONTHLY, today), // 50000
             createMockSubscription("3", "App C", 120000.0, BillingCycle.YEARLY, today) // 120000 / 12 = 10000
         )
 
         val totalMonthlyEquivalent = listSubscriptions.sumOf { sub ->
             when (sub.billingCycle) {
-                BillingCycle.WEEKLY -> sub.price * 4.33
                 BillingCycle.YEARLY -> sub.price / 12.0
                 else -> sub.price
             }
         }
         val actualAverage = if (listSubscriptions.isEmpty()) 0.0 else totalMonthlyEquivalent
 
-        // Ekspektasi: 43300 + 50000 + 10000 = 103300
-        val expectedAverage = 103300.0
+        // Ekspektasi: 50000 + 10000 = 60000
+        val expectedAverage = 60000.0
         assertEquals(expectedAverage, actualAverage, 0.001)
     }
 
@@ -78,7 +76,6 @@ class SubscriptionValidationTest {
             billingCycle = billingCycle,
             startDate = startDate,
             nextPaymentDate = startDate.plusMonths(1),
-            category = "General",
             paymentMethod = "Credit Card",
             isTrial = false,
             status = SubscriptionStatus.ACTIVE,

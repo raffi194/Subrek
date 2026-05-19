@@ -30,7 +30,6 @@ interface SubscriptionDao {
     @Query("""
         SELECT COALESCE(AVG(
             CASE 
-                WHEN billing_cycle = 'WEEKLY' THEN price * 4.33
                 WHEN billing_cycle = 'YEARLY' THEN price / 12.0
                 ELSE price
             END
