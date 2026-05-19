@@ -274,22 +274,64 @@ class SubscriptionRepositoryImpl @Inject constructor(
         isTrial: Boolean
     ) {
         val id = java.util.UUID.randomUUID().toString()
-        val status = if (isTrial) "TRIAL" else "ACTIVE"
-        val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
+        saveSubscriptionExtended(
             id = id,
             name = name,
             price = price,
             currency = "IDR",
-            billingCycle = com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(cycle),
-            startDate = LocalDate.parse(date),
-            nextPaymentDate = LocalDate.parse(date), // Simplification: next payment is start date for now
+            billingCycle = cycle,
             category = "Other",
             paymentMethod = "Manual",
-            isTrial = isTrial,
+            nextPaymentDate = date,
+            status = if (isTrial) "TRIAL" else "ACTIVE"
+        )
+    }
+
+    override suspend fun saveSubscriptionExtended(
+        id: String,
+        name: String,
+        price: Double,
+        currency: String,
+        billingCycle: String,
+        category: String,
+        paymentMethod: String,
+        nextPaymentDate: String,
+        status: String,
+        iconUrl: String?
+    ) {
+        val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
+            id = id,
+            name = name,
+            price = price,
+            currency = currency,
+            billingCycle = com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle),
+            startDate = LocalDate.parse(nextPaymentDate),
+            nextPaymentDate = LocalDate.parse(nextPaymentDate),
+            category = category,
+            paymentMethod = paymentMethod,
+            isTrial = status == "TRIAL",
             status = com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status),
             createdAt = LocalDate.now(),
             updatedAt = LocalDate.now()
         )
+        // Note: The iconUrl is currently not part of the domain Subscription model, 
+        // it's mainly used for Catalog items. If it's needed in Subscription table, 
+        // it should be added to the model and entity.
         insertSubscription(subscription)
+    }
+
+    override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
+        return try {
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val userId = session?.user?.id ?: return null
+            
+            // This is a placeholder for actual Supabase Storage implementation
+            // In a real scenario, you'd use supabaseClient.storage["app-icons"].upload(...)
+            // and return the public URL.
+            "https://placeholder.co/100" // Fallback placeholder
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }

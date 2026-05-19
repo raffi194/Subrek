@@ -224,19 +224,175 @@ fun TambahLanggananScreen(
 
             if (showAppDialog) {
                 var appName by remember { mutableStateOf("") }
-                var appIcon by remember { mutableStateOf("") }
-                var appCat by remember { mutableStateOf("Popular") }
+                var appCat by remember { mutableStateOf("Hiburan") }
+                var appPrice by remember { mutableStateOf("") }
+                var appCurrency by remember { mutableStateOf("IDR") }
+                var appCycle by remember { mutableStateOf("MONTHLY") }
+                var appPaymentMethod by remember { mutableStateOf("E-Wallet") }
+                var appDate by remember { mutableStateOf("2026-05-19") }
+                var isAppCycleExpanded by remember { mutableStateOf(false) }
+
+                // State untuk menyimpan URI gambar lokal hasil pick file
+                var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+                // Launcher untuk membuka Gallery / File Picker mengambil gambar
+                val imagePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                ) { uri: android.net.Uri? ->
+                    selectedImageUri = uri
+                }
+
                 AlertDialog(
                     onDismissRequest = { showAppDialog = false },
-                    title = { Text("Tambah Aplikasi Baru") },
+                    title = { Text("Tambah Aplikasi Baru", fontWeight = FontWeight.Bold) },
                     text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(value = appName, onValueChange = { appName = it }, label = { Text("Nama Aplikasi") })
-                            OutlinedTextField(value = appIcon, onValueChange = { appIcon = it }, label = { Text("URL Link Icon Gambar") })
-                            OutlinedTextField(value = appCat, onValueChange = { appCat = it }, label = { Text("Kategori Target") })
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // ---- COMPONENT UPLOAD GAMBAR APP PROFILE ----
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { imagePickerLauncher.launch("image/*") }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (selectedImageUri != null) {
+                                        AsyncImage(
+                                            model = selectedImageUri,
+                                            contentDescription = "Preview Icon",
+                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Pilih Gambar",
+                                            tint = Color.Gray
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text("Icon Aplikasi Profile", fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        text = if (selectedImageUri != null) "Gambar terpilih (Klik untuk ganti)" else "Klik untuk upload file gambar",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            // --------------------------------------------
+
+                            OutlinedTextField(
+                                value = appName,
+                                onValueChange = { appName = it },
+                                label = { Text("Nama Aplikasi *") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = appCat,
+                                onValueChange = { appCat = it },
+                                label = { Text("Kategori *") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = appCurrency,
+                                    onValueChange = { appCurrency = it },
+                                    label = { Text("Valuta") },
+                                    modifier = Modifier.weight(0.3f)
+                                )
+                                OutlinedTextField(
+                                    value = appPrice,
+                                    onValueChange = { appPrice = it },
+                                    label = { Text("Biaya *") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(0.7f)
+                                )
+                            }
+
+                            // Dropdown Siklus Penagihan di dalam Dialog
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                ExposedDropdownMenuBox(
+                                    expanded = isAppCycleExpanded,
+                                    onExpandedChange = { isAppCycleExpanded = !isAppCycleExpanded }
+                                ) {
+                                    OutlinedTextField(
+                                        value = appCycle,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Siklus Penagihan *") },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isAppCycleExpanded) },
+                                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = isAppCycleExpanded,
+                                        onDismissRequest = { isAppCycleExpanded = false }
+                                    ) {
+                                        listOf("WEEKLY", "MONTHLY", "YEARLY").forEach { opt ->
+                                            DropdownMenuItem(
+                                                text = { Text(opt) },
+                                                onClick = { appCycle = opt; isAppCycleExpanded = false }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = appPaymentMethod,
+                                onValueChange = { appPaymentMethod = it },
+                                label = { Text("Metode Pembayaran *") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = appDate,
+                                onValueChange = { appDate = it },
+                                label = { Text("Tanggal Mulai (YYYY-MM-DD) *") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     },
-                    confirmButton = { Button(onClick = { if(appName.isNotBlank()){ viewModel.addCustomApp(appName, appIcon.ifBlank { null }, appCat); showAppDialog = false } }) { Text("Simpan") } }
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (appName.isNotBlank() && appPrice.isNotBlank()) {
+                                    val cleanPrice = appPrice.replace(",", ".").toDoubleOrNull() ?: 0.0
+
+                                    // Kirim data beserta Uri file lokal ke ViewModel
+                                    viewModel.addCustomAppWithImage(
+                                        name = appName,
+                                        category = appCat,
+                                        price = cleanPrice,
+                                        currency = appCurrency.ifBlank { "IDR" },
+                                        billingCycle = appCycle,
+                                        paymentMethod = appPaymentMethod,
+                                        nextPaymentDate = appDate.ifBlank { "2026-05-19" },
+                                        imageUri = selectedImageUri
+                                    )
+                                    showAppDialog = false
+                                }
+                            }
+                        ) {
+                            Text("Simpan")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showAppDialog = false }) { Text("Batal") }
+                    }
                 )
             }
         }

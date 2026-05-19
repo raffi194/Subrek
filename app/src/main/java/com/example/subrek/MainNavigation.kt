@@ -121,8 +121,10 @@ fun MainNavigation(
 
             composable(Screen.Dashboard.route) {
                 val viewModel: DashboardViewModel = hiltViewModel()
+                val profileViewModel: ProfileViewModel = hiltViewModel()
                 DashboardScreen(
                     viewModel = viewModel,
+                    profileViewModel = profileViewModel,
                     onNavigateToAddSubscription = {
                         navController.navigate(Screen.TambahLangganan.route)
                     },

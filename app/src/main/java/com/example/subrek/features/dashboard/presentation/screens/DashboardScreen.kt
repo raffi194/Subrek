@@ -36,6 +36,7 @@ import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.dashboard.presentation.components.DonutChartCategories
 import com.example.subrek.features.dashboard.presentation.components.HorizontalBarChartMethods
 import com.example.subrek.features.dashboard.presentation.viewmodel.DashboardViewModel
+import com.example.subrek.features.profile.presentation.viewmodel.ProfileViewModel
 import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.subscription.domain.model.SubscriptionStatus
 import java.text.NumberFormat
@@ -49,17 +50,16 @@ import kotlin.math.roundToInt
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
+    profileViewModel: ProfileViewModel,
     onNavigateToAddSubscription: () -> Unit,
     onNavigateToDetail: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val profileState by profileViewModel.uiState.collectAsState()
     val categories = listOf("Semua", "Hiburan", "Productivity", "Utilitas", "Kesehatan", "Finansial")
 
     Scaffold(
         topBar = {
-            // ----------------------------------------------------------------
-            // PERBAIKAN GAP 1: Header profil (foto + nama kiri, lonceng kanan)
-            // ----------------------------------------------------------------
             TopAppBar(
                 title = {
                     Row(
@@ -67,16 +67,32 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Avatar profil user
-                        AsyncImage(
-                            model = state.userAvatarUrl.takeIf { !it.isNullOrBlank() }
-                                ?: "https://ui-avatars.com/api/?name=${state.userName}&background=2563EB&color=fff&size=100",
-                            contentDescription = "Foto Profil",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Slate800)
-                        )
+                        if (profileState.currentAvatarUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = profileState.currentAvatarUrl,
+                                contentDescription = "Foto Profil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Slate800)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(Blue600, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = (profileState.originalName.takeIf { it.isNotEmpty() } ?: "U").take(1).uppercase(),
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+
                         Column {
                             Text(
                                 text = "Selamat datang,",
@@ -85,7 +101,7 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.Normal
                             )
                             Text(
-                                text = state.userName,
+                                text = profileState.originalName.takeIf { it.isNotEmpty() } ?: "Pengguna",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold
@@ -99,13 +115,6 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Log Notifikasi",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    IconButton(onClick = { viewModel.triggerSync() }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Sync Cloud",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }

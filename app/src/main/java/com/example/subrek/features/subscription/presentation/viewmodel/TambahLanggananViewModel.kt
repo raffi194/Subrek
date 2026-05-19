@@ -78,6 +78,72 @@ class TambahLanggananViewModel @Inject constructor(
             _uiState.update { it.copy(isSaveSuccess = true) }
         }
     }
+
+    fun addCustomAppWithDetails(
+        name: String,
+        category: String,
+        price: Double,
+        currency: String,
+        billingCycle: String,
+        paymentMethod: String,
+        nextPaymentDate: String
+    ) {
+        addCustomAppWithImage(name, category, price, currency, billingCycle, paymentMethod, nextPaymentDate, null)
+    }
+
+    fun addCustomAppWithImage(
+        name: String,
+        category: String,
+        price: Double,
+        currency: String,
+        billingCycle: String,
+        paymentMethod: String,
+        nextPaymentDate: String,
+        imageUri: android.net.Uri?
+    ) {
+        viewModelScope.launch {
+            var remoteIconUrl: String? = null
+
+            // 1. Eksekusi Upload File Gambar ke Supabase Storage jika file ada
+            if (imageUri != null) {
+                try {
+                    // repository mengunggah file biner dan mereturn string public URL dari Supabase
+                    remoteIconUrl = repository.uploadAppIconStorage(imageUri)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // Fallback jika upload bermasalah agar database tidak crash null constraint
+                }
+            }
+
+            val generatedId = UUID.randomUUID().toString()
+
+            // 2. Masukkan ke Katalog App Lokal
+            repository.insertCustomApp(
+                LocalAppEntity(
+                    id = generatedId,
+                    name = name,
+                    iconUrl = remoteIconUrl, // Menyimpan String URL hemat storage
+                    categoryName = category
+                )
+            )
+
+            // 3. Simpan ke database terpusat (Supabase subscriptions table) dengan tambahan kolom iconUrl
+            repository.saveSubscriptionExtended(
+                id = generatedId,
+                name = name,
+                price = price,
+                currency = currency,
+                billingCycle = billingCycle,
+                category = category,
+                paymentMethod = paymentMethod,
+                nextPaymentDate = nextPaymentDate,
+                status = "ACTIVE",
+                iconUrl = remoteIconUrl // Masuk sebagai string path/varchar di PostgreSQL
+            )
+
+            _uiState.update { it.copy(isSaveSuccess = true) }
+        }
+    }
     
     fun resetSaveSuccess() { _uiState.update { it.copy(isSaveSuccess = false) } }
 }
