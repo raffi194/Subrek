@@ -157,10 +157,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
         billingCycle: String,
         startDate: String
     ) {
-        // Update lokal
+        // Update lokal tetap berjalan
         subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
         
-        // Update remote (Push update)
+        // Update remote (Push update) dengan proteksi UUID user
         try {
             val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
             val userId = session?.user?.id
@@ -169,10 +169,12 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     {
                         set("price", price)
                         set("billing_cycle", billingCycle)
-                        set("start_date", startDate)
+                        // 🛍️ Diubah ke next_payment_date agar sinkron dengan skema tabel PostgreSQL Anda
+                        set("next_payment_date", startDate) 
                         set("updated_at", "now()")
                     }
                 ) {
+                    // Filter wajib untuk memastikan baris diupdate HANYA milik user yang sedang login (UUID Isolation)
                     filter {
                         eq("id", id)
                         eq("user_id", userId)
@@ -300,6 +302,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
         status: String,
         iconUrl: String?
     ) {
+        // Ambil ID user aktif untuk disuntikkan secara aman saat proses konversi push remote
+        val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
+        val userId = session?.user?.id
+
         val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
             id = id,
             name = name,
@@ -313,12 +319,38 @@ class SubscriptionRepositoryImpl @Inject constructor(
             isTrial = status == "TRIAL",
             status = com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status),
             createdAt = LocalDate.now(),
-            updatedAt = LocalDate.now()
+            updatedAt = LocalDate.now(),
+            iconUrl = iconUrl
         )
-        // Note: The iconUrl is currently not part of the domain Subscription model, 
-        // it's mainly used for Catalog items. If it's needed in Subscription table, 
-        // it should be added to the model and entity.
+        
+        // 1. Amankan penyimpanan lokal terlebih dahulu
         insertSubscription(subscription)
+
+        // 2. Jika user online, langsung daftarkan aplikasi baru ini ke cloud secara spesifik menggunakan UUID miliknya
+        if (userId != null) {
+            try {
+                val dto = SubscriptionDto(
+                    id = id,
+                    userId = userId, // Memastikan data terikat khusus ke UUID user penambah data
+                    name = name,
+                    price = price,
+                    currency = currency,
+                    billingCycle = billingCycle,
+                    nextPaymentDate = nextPaymentDate,
+                    category = category,
+                    paymentMethod = paymentMethod,
+                    isTrial = status == "TRIAL",
+                    isGhostSubscription = false,
+                    status = status,
+                    createdAt = LocalDate.now().toString(),
+                    iconUrl = iconUrl // Nilai URL dari Supabase Storage masuk ke PostgreSQL
+                )
+                supabaseClient.postgrest["subscriptions"].insert(dto)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Kegagalan jaringan tidak merusak app lokal karena Arsitektur Offline-First
+            }
+        }
     }
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {

@@ -27,7 +27,8 @@ fun SubscriptionEntity.toDomain(): Subscription {
         status = SubscriptionStatus.valueOf(status),
         unconfirmedCyclesCount = unconfirmedCyclesCount,
         createdAt = LocalDate.parse(createdAt, dateFormatter),
-        updatedAt = LocalDate.now() // Or map from updatedAt long if needed, but domain expects LocalDate
+        updatedAt = LocalDate.now(),
+        iconUrl = iconUrl
     )
 }
 
@@ -49,7 +50,8 @@ fun Subscription.toEntity(isDirty: Boolean = true): SubscriptionEntity {
         unconfirmedCyclesCount = unconfirmedCyclesCount,
         createdAt = createdAt.format(dateFormatter),
         isDirty = isDirty,
-        updatedAt = System.currentTimeMillis()
+        updatedAt = System.currentTimeMillis(),
+        iconUrl = iconUrl
     )
 }
 
@@ -62,7 +64,6 @@ fun SubscriptionEntity.toDto(userId: String): SubscriptionDto {
         price = price,
         currency = currency,
         billingCycle = billingCycle,
-        startDate = startDate,
         nextPaymentDate = nextPaymentDate,
         category = category,
         paymentMethod = paymentMethod,
@@ -70,7 +71,8 @@ fun SubscriptionEntity.toDto(userId: String): SubscriptionDto {
         isGhostSubscription = isGhostSubscription,
         status = status,
         unconfirmedCyclesCount = unconfirmedCyclesCount,
-        createdAt = createdAt
+        createdAt = createdAt,
+        iconUrl = iconUrl
     )
 }
 
@@ -82,7 +84,7 @@ fun SubscriptionDto.toEntity(): SubscriptionEntity {
         price = price,
         currency = currency,
         billingCycle = billingCycle,
-        startDate = startDate,
+        startDate = nextPaymentDate, // Menggunakan nextPaymentDate sebagai fallback karena cloud tidak menyimpan startDate
         nextPaymentDate = nextPaymentDate,
         category = category,
         paymentMethod = paymentMethod,
@@ -92,6 +94,7 @@ fun SubscriptionDto.toEntity(): SubscriptionEntity {
         unconfirmedCyclesCount = unconfirmedCyclesCount,
         createdAt = createdAt,
         isDirty = false,
-        updatedAt = System.currentTimeMillis()
+        updatedAt = System.currentTimeMillis(),
+        iconUrl = iconUrl
     )
 }

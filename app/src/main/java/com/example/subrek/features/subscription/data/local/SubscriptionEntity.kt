@@ -57,5 +57,8 @@ data class SubscriptionEntity(
     val isDirty: Boolean = false, // True jika data berubah di lokal dan belum sinkron ke cloud
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis() // Timestamp untuk keperluan validasi sinkronisasi
+    val updatedAt: Long = System.currentTimeMillis(), // Timestamp untuk keperluan validasi sinkronisasi
+
+    @ColumnInfo(name = "icon_url")
+    val iconUrl: String? = null // 🛠️ Tambahkan kolom lokal untuk menampung URL Gambar
 )

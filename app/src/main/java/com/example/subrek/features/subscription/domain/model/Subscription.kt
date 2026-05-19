@@ -21,7 +21,8 @@ data class Subscription(
     val status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
     val unconfirmedCyclesCount: Int = 0, // Pelacak jumlah siklus penagihan yang tidak dikonfirmasi pengguna
     val createdAt: LocalDate,
-    val updatedAt: LocalDate
+    val updatedAt: LocalDate,
+    val iconUrl: String? = null
 )
 
 enum class BillingCycle {

@@ -20,8 +20,7 @@ data class SubscriptionDto(
     val currency: String,
     @SerialName("billing_cycle")
     val billingCycle: String,
-    @SerialName("start_date")
-    val startDate: String,
+    // 🛍️ Dihapus karena di PostgreSQL hanya menggunakan next_payment_date
     @SerialName("next_payment_date")
     val nextPaymentDate: String,
     @SerialName("category")
@@ -39,5 +38,7 @@ data class SubscriptionDto(
     @SerialName("created_at")
     val createdAt: String,
     @SerialName("updated_at")
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    @SerialName("icon_url")
+    val iconUrl: String? = null //  Ditambahkan agar sinkron dengan kolom icon_url di DB
 )
