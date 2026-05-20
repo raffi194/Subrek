@@ -357,8 +357,45 @@ fun SubscriptionItemRow(
             // Clickable dihapus dari Row agar geser (swipe) tidak macet
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        // horizontalArrangement = Arrangement.SpaceBetween // Dihapus karena kita menggunakan weight dan letak elemen berurutan
     ) {
+
+        // --- TAMBAHAN KODE UNTUK GAMBAR / PLACEHOLDER MULAI DI SINI ---
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFE2E8F0)), // Warna latar belakang placeholder
+            contentAlignment = Alignment.Center
+        ) {
+            // Jika model 'Subscription' Anda memiliki URL gambar (misal: sub.logoUrl),
+            // Anda bisa menggunakan AsyncImage dari Coil. Silakan uncomment dan sesuaikan kodenya:
+
+            /*
+            if (!sub.logoUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = sub.logoUrl,
+                    contentDescription = "Logo ${sub.name}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+            */
+
+            // Placeholder: Menampilkan huruf pertama dari nama langganan jika gambar tidak ada
+            Text(
+                text = sub.name.take(1).uppercase(),
+                color = Slate500,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+
+            /* } */ // Tutup kurawal else jika Anda mengaktifkan AsyncImage di atas
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+        // --- TAMBAHAN KODE SELESAI ---
+
         Column(modifier = Modifier.weight(0.6f)) {
             Text(
                 sub.name,
@@ -424,7 +461,7 @@ fun SubscriptionItemRow(
             Text(
                 formattedPrice,
                 fontWeight = FontWeight.Black,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 color = Color.Black
             )
             Text(
@@ -445,7 +482,7 @@ fun BadgeCard(
     Box(
         modifier = Modifier
             .background(containerColor, shape = RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 0.dp)
     ) {
         Text(text, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
     }
