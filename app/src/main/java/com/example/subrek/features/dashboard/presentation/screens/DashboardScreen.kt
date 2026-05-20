@@ -54,16 +54,142 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsState()
     val profileState by profileViewModel.uiState.collectAsState()
     val context = LocalContext.current // Tambahkan ini
+    var showSpendingBottomSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile()
+    }
+
+    if (showSpendingBottomSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showSpendingBottomSheet = false },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "Analisis Pengeluaran",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Card Kumulatif (Lifetime Spending)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "TOTAL INPUT PENGELUARAN",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Slate500,
+                            letterSpacing = 1.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        val formattedLifetime = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                            maximumFractionDigits = 0
+                        }.format(state.lifetimeSpending)
+                        Text(
+                            text = formattedLifetime,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Blue600
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Akumulasi biaya sejak mulai menggunakan aplikasi ini.",
+                            fontSize = 12.sp,
+                            color = Slate500
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Riwayat Pengeluaran Bulanan",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (state.monthlyHistorySpending.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Belum ada riwayat pengeluaran yang terkonfirmasi.",
+                            color = Slate500,
+                            fontSize = 14.sp
+                        )
+                    }
+                } else {
+                    val maxSpending = state.monthlyHistorySpending.maxOfOrNull { it.amount }?.takeIf { it > 0 } ?: 1.0
+
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
+                    ) {
+                        items(state.monthlyHistorySpending.reversed()) { item ->
+                            val progress = (item.amount / maxSpending).toFloat()
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = item.monthName,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color.Black
+                                    )
+                                    val formattedAmount = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                                        maximumFractionDigits = 0
+                                    }.format(item.amount)
+                                    Text(
+                                        text = formattedAmount,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LinearProgressIndicator(
+                                    progress = { progress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    color = Blue600,
+                                    trackColor = Color(0xFFE2E8F0)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    // Diberi batasan ukuran (Box & padding) agar tidak menutupi tombol Plus
                     Box(modifier = Modifier.padding(end = 16.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -117,25 +243,17 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    // Tombol Notifikasi
                     IconButton(
-                        onClick = { /* TODO: navigate ke log notifikasi */ },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Log Notifikasi",
-                            tint = Color.Black
-                        )
-                    }
-                    Button(
                         onClick = {
                             val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
                             WorkManager.getInstance(context).enqueue(workRequest)
-                        },
-                        modifier = Modifier.padding(16.dp)
+                        }
                     ) {
-                        Text("Test Notifikasi")
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifikasi",
+                            tint = Color.Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -157,7 +275,8 @@ fun DashboardScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
+                        .padding(horizontal = 24.dp)
+                        .clickable { showSpendingBottomSheet = true },
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
                 ) {
@@ -186,12 +305,24 @@ fun DashboardScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Aplikasi Aktif: ${state.activeAppsCount}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (state.activeAppsCount > 0) Blue600 else Slate500,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Aplikasi Aktif: ${state.activeAppsCount}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (state.activeAppsCount > 0) Blue600 else Slate500,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Lihat Riwayat →",
+                                fontSize = 12.sp,
+                                color = Blue600,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }

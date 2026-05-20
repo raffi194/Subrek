@@ -10,22 +10,6 @@ object SeedData {
 
     private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val today = LocalDate.now()
-
-    // =========================================================
-    // 1. KATEGORI DEFAULT
-    // =========================================================
-    val defaultCategories = listOf(
-        LocalCategoryEntity(id = "cat_hiburan",      name = "Hiburan"),
-        LocalCategoryEntity(id = "cat_productivity", name = "Productivity"),
-        LocalCategoryEntity(id = "cat_utilitas",     name = "Utilitas"),
-        LocalCategoryEntity(id = "cat_kesehatan",    name = "Kesehatan"),
-        LocalCategoryEntity(id = "cat_finansial",    name = "Finansial"),
-        LocalCategoryEntity(id = "cat_cineman",      name = "Cineman"),
-        LocalCategoryEntity(id = "cat_music",        name = "Music"),
-        LocalCategoryEntity(id = "cat_social",       name = "Social Network"),
-        LocalCategoryEntity(id = "cat_popular",      name = "Popular"),
-    )
-
     // =========================================================
     // 2. KATALOG APP DEFAULT
     // =========================================================
@@ -33,29 +17,42 @@ object SeedData {
         LocalAppEntity(
             id = "app_netflix",
             name = "Netflix",
-            iconUrl = "https://i.pinimg.com/280x280_RS/0d/12/5b/0d125bef05d84ce60294293ad8ad6d26.jpg"
-        )
-    )
-
-    // =========================================================
-    // 3. CONTOH DATA LANGGANAN DEFAULT (Demo/Onboarding)
-    // =========================================================
-    val demoSubscriptions = listOf(
-        SubscriptionEntity(
-            id = "demo_netflix",
-            name = "Netflix",
-            price = 54000.0,
-            currency = "IDR",
-            billingCycle = "MONTHLY",
-            startDate = today.minusMonths(3).format(fmt),
-            nextPaymentDate = today.plusDays(7).format(fmt),
-            paymentMethod = "Kartu Kredit",
-            isTrial = false,
-            isGhostSubscription = false,
-            status = "ACTIVE",
-            unconfirmedCyclesCount = 0,
-            createdAt = today.minusMonths(3).format(fmt),
-            iconUrl = "https://i.pinimg.com/280x280_RS/0d/12/5b/0d125bef05d84ce60294293ad8ad6d26.jpg"
+            iconUrl = "https://img.icons8.com/color/512/netflix-desktop-app.png"
+        ),
+        LocalAppEntity(
+            id = "app_spotify",
+            name = "Spotify",
+            iconUrl = "https://img.icons8.com/color/512/spotify--v1.png"
+        ),
+        LocalAppEntity(
+            id = "app_youtube",
+            name = "YouTube",
+            iconUrl = "https://img.icons8.com/color/512/youtube-play.png"
+        ),
+        LocalAppEntity(
+            id = "app_prime",
+            name = "Prime Video",
+            iconUrl = "https://img.icons8.com/color/512/amazon-prime-video.png"
+        ),
+        LocalAppEntity(
+            id = "app_notion",
+            name = "Notion",
+            iconUrl = "https://img.icons8.com/color/512/notion.png"
+        ),
+        LocalAppEntity(
+            id = "app_canva",
+            name = "Canva",
+            iconUrl = "https://img.icons8.com/color/512/canva.png"
+        ),
+        LocalAppEntity(
+            id = "app_zoom",
+            name = "Zoom",
+            iconUrl = "https://img.icons8.com/color/512/zoom.png"
+        ),
+        LocalAppEntity(
+            id = "app_chatgpt",
+            name = "ChatGPT",
+            iconUrl = "https://img.icons8.com/fluency/512/chatgpt.png"
         )
     )
 }
