@@ -15,7 +15,7 @@ class DatabaseSeeder @Inject constructor(
     private val sharedPreferences: SharedPreferences
 ) {
     companion object {
-        private const val KEY_SEED_DONE = "key_db_seed_done_v1"
+        private const val KEY_SEED_DONE = "key_db_seed_done_v3"
     }
 
     fun seedIfNeeded() {
@@ -24,6 +24,11 @@ class DatabaseSeeder @Inject constructor(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Clear old database data for clean re-seeding
+                subscriptionDao.deleteAllCategories()
+                subscriptionDao.deleteAllApps()
+                subscriptionDao.deleteAllSubscriptions()
+
                 // Seed kategori default
                 SeedData.defaultCategories.forEach { category ->
                     subscriptionDao.insertCategory(category)
@@ -34,11 +39,8 @@ class DatabaseSeeder @Inject constructor(
                     subscriptionDao.insertCustomApp(app)
                 }
 
-                // Seed demo subscriptions HANYA jika tabel kosong
-                val existing = subscriptionDao.getAllSubscriptions().first()
-                if (existing.isEmpty()) {
-                    subscriptionDao.insertSubscriptions(SeedData.demoSubscriptions)
-                }
+                // Seed demo subscriptions
+                subscriptionDao.insertSubscriptions(SeedData.demoSubscriptions)
 
                 sharedPreferences.edit()
                     .putBoolean(KEY_SEED_DONE, true)

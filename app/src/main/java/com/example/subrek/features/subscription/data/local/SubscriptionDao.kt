@@ -85,4 +85,13 @@ interface SubscriptionDao {
 
     @Query("DELETE FROM local_apps WHERE id = :id")
     suspend fun deleteCustomApp(id: String)
+
+    @Query("DELETE FROM local_categories")
+    suspend fun deleteAllCategories()
+
+    @Query("DELETE FROM local_apps")
+    suspend fun deleteAllApps()
+
+    @Query("DELETE FROM subscriptions")
+    suspend fun deleteAllSubscriptions()
 }

@@ -90,7 +90,7 @@ fun SubscriptionDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = "https://placeholder.co/100", // Icon URL not in domain model yet, using placeholder
+                            model = sub.iconUrl ?: "https://placeholder.co/100",
                             contentDescription = null,
                             modifier = Modifier
                                 .size(64.dp)

@@ -171,7 +171,9 @@ fun DashboardScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val formattedPrice = if (state.totalConsumptionThisMonth > 0) {
                                 NumberFormat
-                                    .getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+                                    .getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                                        maximumFractionDigits = 0
+                                    }
                                     .format(state.totalConsumptionThisMonth)
                             } else {
                                 "Rp 0"
@@ -194,24 +196,26 @@ fun DashboardScreen(
                 }
             }
 
-            // 2. JUDUL DAFTAR AKTIF
+            // 2. DAFTAR LANGGANAN AKTIF DAN FREE TRIAL
+            val activeSubscriptions = state.subscriptionsList.filter { it.status == SubscriptionStatus.ACTIVE }
+            val freeTrialSubscriptions = state.subscriptionsList.filter { it.status == SubscriptionStatus.TRIAL }
+
             item {
                 Text(
                     text = "Active Subscriptions",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                 )
             }
 
-            // 3. LIST AKTIF DENGAN SWIPE-TO-DELETE & TOMBOL BAYAR
-            if (state.subscriptionsList.isEmpty()) {
+            if (activeSubscriptions.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 40.dp),
+                            .padding(vertical = 20.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -222,13 +226,54 @@ fun DashboardScreen(
                     }
                 }
             } else {
-                items(state.subscriptionsList, key = { it.id }) { item ->
-                    Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                items(activeSubscriptions, key = { it.id }) { item ->
+                    Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
                         SwipeToDeleteSubscriptionItem(
                             subscription = item,
                             onDelete = { viewModel.deleteSubscription(item.id) },
                             onClick = { onNavigateToDetail(item.id) },
-                            onMarkPaid = { viewModel.markAsPaid(item) }
+                            onMarkPaid = { viewModel.markAsPaid(item) },
+                            showTrialTag = true
+                        )
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Free Trial",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+            }
+
+            if (freeTrialSubscriptions.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Tidak ada uji coba gratis ditemukan",
+                            color = Slate500,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            } else {
+                items(freeTrialSubscriptions, key = { it.id }) { item ->
+                    Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
+                        SwipeToDeleteSubscriptionItem(
+                            subscription = item,
+                            onDelete = { viewModel.deleteSubscription(item.id) },
+                            onClick = { onNavigateToDetail(item.id) },
+                            onMarkPaid = { viewModel.markAsPaid(item) },
+                            showTrialTag = false
                         )
                     }
                 }
@@ -245,7 +290,8 @@ fun SwipeToDeleteSubscriptionItem(
     subscription: Subscription,
     onDelete: () -> Unit,
     onClick: () -> Unit,
-    onMarkPaid: () -> Unit
+    onMarkPaid: () -> Unit,
+    showTrialTag: Boolean = true
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     val revealThreshold = -120.dp.value
@@ -335,7 +381,8 @@ fun SwipeToDeleteSubscriptionItem(
             SubscriptionItemRow(
                 sub = subscription,
                 onClick = onClick,
-                onMarkPaid = onMarkPaid
+                onMarkPaid = onMarkPaid,
+                showTrialTag = showTrialTag
             )
         }
     }
@@ -348,7 +395,8 @@ fun SwipeToDeleteSubscriptionItem(
 fun SubscriptionItemRow(
     sub: Subscription,
     onClick: () -> Unit = {},
-    onMarkPaid: () -> Unit = {}
+    onMarkPaid: () -> Unit = {},
+    showTrialTag: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -368,29 +416,22 @@ fun SubscriptionItemRow(
                 .background(Color(0xFFE2E8F0)), // Warna latar belakang placeholder
             contentAlignment = Alignment.Center
         ) {
-            // Jika model 'Subscription' Anda memiliki URL gambar (misal: sub.logoUrl),
-            // Anda bisa menggunakan AsyncImage dari Coil. Silakan uncomment dan sesuaikan kodenya:
-
-            /*
-            if (!sub.logoUrl.isNullOrEmpty()) {
+            if (!sub.iconUrl.isNullOrEmpty()) {
                 AsyncImage(
-                    model = sub.logoUrl,
+                    model = sub.iconUrl,
                     contentDescription = "Logo ${sub.name}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-            */
-
-            // Placeholder: Menampilkan huruf pertama dari nama langganan jika gambar tidak ada
-            Text(
-                text = sub.name.take(1).uppercase(),
-                color = Slate500,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-
-            /* } */ // Tutup kurawal else jika Anda mengaktifkan AsyncImage di atas
+                // Placeholder: Menampilkan huruf pertama dari nama langganan jika gambar tidak ada
+                Text(
+                    text = sub.name.take(1).uppercase(),
+                    color = Slate500,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -419,7 +460,7 @@ fun SubscriptionItemRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (sub.status == SubscriptionStatus.TRIAL) {
+                if (sub.status == SubscriptionStatus.TRIAL && showTrialTag) {
                     BadgeCard("Free Trial", Amber500.copy(alpha = 0.15f), Amber500)
                 }
 
@@ -435,7 +476,7 @@ fun SubscriptionItemRow(
                     else -> {
                         val formattedDate = sub.nextPaymentDate
                             .format(DateTimeFormatter.ofPattern("dd MMM yy", Locale.ENGLISH))
-                        BadgeCard("Tempo: $formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
+                        BadgeCard("$formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
                     }
                 }
             }
@@ -456,7 +497,9 @@ fun SubscriptionItemRow(
 
         Column(modifier = Modifier.weight(0.4f), horizontalAlignment = Alignment.End) {
             val formattedPrice = NumberFormat
-                .getCurrencyInstance(Locale.forLanguageTag("id-ID"))
+                .getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                    maximumFractionDigits = 0
+                }
                 .format(sub.price)
             Text(
                 formattedPrice,

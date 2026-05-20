@@ -1,5 +1,7 @@
 package com.example.subrek.features.subscription.data.repository
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.example.subrek.features.subscription.data.local.LocalAppEntity
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
 import com.example.subrek.features.subscription.data.mapper.toDomain
@@ -16,7 +18,8 @@ import javax.inject.Singleton
 
 @Singleton
 class SubscriptionRepositoryImpl @Inject constructor(
-    private val subscriptionDao: SubscriptionDao
+    private val subscriptionDao: SubscriptionDao,
+    @ApplicationContext private val context: Context
 ) : SubscriptionRepository {
 
     override fun getAllSubscriptions(): Flow<List<Subscription>> {
@@ -200,8 +203,21 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
-        // Supabase Storage dihilangkan.
-        // Kini hanya mengembalikan path lokal perangkat sebagai String agar tetap bisa dimuat oleh antarmuka (UI).
-        return uri.toString()
+        return try {
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val fileName = "app_icon_${System.currentTimeMillis()}.png"
+            val file = java.io.File(context.filesDir, fileName)
+            val outputStream = java.io.FileOutputStream(file)
+            inputStream.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
