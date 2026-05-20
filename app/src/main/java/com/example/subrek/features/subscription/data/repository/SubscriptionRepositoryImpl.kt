@@ -3,16 +3,9 @@ package com.example.subrek.features.subscription.data.repository
 import com.example.subrek.features.subscription.data.local.LocalAppEntity
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
 import com.example.subrek.features.subscription.data.mapper.toDomain
-import com.example.subrek.features.subscription.data.mapper.toDto
 import com.example.subrek.features.subscription.data.mapper.toEntity
-import com.example.subrek.features.subscription.data.remote.SubscriptionDto
 import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.status.SessionStatus
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,8 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SubscriptionRepositoryImpl @Inject constructor(
-    private val subscriptionDao: SubscriptionDao,
-    private val supabaseClient: SupabaseClient
+    private val subscriptionDao: SubscriptionDao
 ) : SubscriptionRepository {
 
     override fun getAllSubscriptions(): Flow<List<Subscription>> {
@@ -38,45 +30,19 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertSubscription(subscription: Subscription) {
-        subscriptionDao.insertSubscription(subscription.toEntity(isDirty = true))
+        // Karena sudah offline-only, hapus argumen (isDirty = true) pada fungsi toEntity().
+        // Pastikan Anda juga sudah menghapus parameter isDirty di dalam berkas SubscriptionMapper.kt
+        subscriptionDao.insertSubscription(subscription.toEntity())
     }
 
     override suspend fun deleteSubscription(id: String) {
         subscriptionDao.deleteSubscriptionById(id)
     }
 
+    // CATATAN: Jika interface SubscriptionRepository.kt masih mewajibkan fungsi 'syncWithRemote()',
+    // hapus fungsi tersebut dari interface. Atau Anda bisa membiarkan implementasi kosong ini:
     override suspend fun syncWithRemote(): Result<Unit> {
-        return try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id ?: return Result.failure(Exception("User not authenticated"))
-
-            val dirtyEntities = subscriptionDao.getDirtySubscriptions()
-            if (dirtyEntities.isNotEmpty()) {
-                val dtosToUpload = dirtyEntities.map { it.toDto(userId) }
-                supabaseClient.postgrest["subscriptions"].upsert(dtosToUpload)
-                val cleanedEntities = dirtyEntities.map { it.copy(isDirty = false) }
-                subscriptionDao.insertSubscriptions(cleanedEntities)
-            }
-
-            val response = supabaseClient.postgrest["subscriptions"]
-                .select(columns = Columns.ALL) {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                }
-            
-            val remoteDtos = response.decodeList<SubscriptionDto>()
-
-            if (remoteDtos.isNotEmpty()) {
-                val localEntities = remoteDtos.map { it.toEntity() }
-                subscriptionDao.insertSubscriptions(localEntities)
-            }
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
-        }
+        return Result.success(Unit) // Tidak melakukan apapun di mode offline
     }
 
     override suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription> {
@@ -121,21 +87,9 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {
+        // Meskipun nama fungsinya masih mengandung "AndRemote" (untuk menyesuaikan Interface),
+        // fungsinya kini hanya menghapus dari Room lokal.
         subscriptionDao.deleteSubscriptionById(id)
-        try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id
-            if (userId != null) {
-                supabaseClient.postgrest["subscriptions"].delete {
-                    filter {
-                        eq("id", id)
-                        eq("user_id", userId)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override fun getSubscriptionByIdFlow(id: String): Flow<Subscription?> {
@@ -148,75 +102,26 @@ class SubscriptionRepositoryImpl @Inject constructor(
         billingCycle: String,
         startDate: String
     ) {
+        // Logika update ke Supabase dihapus total
         subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
-        try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id
-            if (userId != null) {
-                supabaseClient.postgrest.from("subscriptions").update(
-                    {
-                        set("price", price)
-                        set("billing_cycle", billingCycle)
-                        set("next_payment_date", startDate) 
-                        set("updated_at", java.time.Instant.now().toString())
-                    }
-                ) {
-                    filter {
-                        eq("id", id)
-                        eq("user_id", userId)
-                        eq("status", "ACTIVE")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override suspend fun terminateSubscription(id: String) {
+        // Logika update status ENDED ke Supabase dihapus total
         subscriptionDao.terminateSubscription(id)
-        try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id
-            if (userId != null) {
-                supabaseClient.postgrest.from("subscriptions").update(
-                    {
-                        set("status", "ENDED")
-                        set("updated_at", java.time.Instant.now().toString())
-                    }
-                ) {
-                    filter {
-                        eq("id", id)
-                        eq("user_id", userId)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override suspend fun insertCustomApp(app: LocalAppEntity) {
+        // Logika upsert ke Supabase dihapus total
         subscriptionDao.insertCustomApp(app)
-        try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id ?: return
-
-            supabaseClient.postgrest["user_apps"].upsert(
-                mapOf(
-                    "id" to app.id,
-                    "user_id" to userId,
-                    "name" to app.name,
-                    "icon_url" to app.iconUrl
-                )
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override fun getCustomApps(): Flow<List<LocalAppEntity>> {
         return subscriptionDao.getCustomApps()
+    }
+
+    override suspend fun deleteCustomApp(id: String) {
+        subscriptionDao.deleteCustomApp(id)
     }
 
     override suspend fun saveSubscription(
@@ -252,27 +157,26 @@ class SubscriptionRepositoryImpl @Inject constructor(
         status: String,
         iconUrl: String?
     ) {
-        val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-        val userId = session?.user?.id
+        // Variabel autentikasi session Supabase dihapus total
 
-        // 🛠️ SAFE PARSING TANGGAL: Cegah DateTimeParseException
+        // 🛠️ SAFE PARSING TANGGAL
         val parsedDate = try {
             LocalDate.parse(nextPaymentDate, DateTimeFormatter.ISO_LOCAL_DATE)
         } catch (e: Exception) {
-            LocalDate.now() // Fallback jika format salah
+            LocalDate.now()
         }
 
-        // 🛠️ SAFE ENUM CONVERSION: Pastikan mapping tidak melempar IllegalArgumentException
+        // 🛠️ SAFE ENUM CONVERSION
         val domainCycle = try {
             com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle.uppercase())
         } catch (e: Exception) {
-            com.example.subrek.features.subscription.domain.model.BillingCycle.MONTHLY // Default fallback
+            com.example.subrek.features.subscription.domain.model.BillingCycle.MONTHLY
         }
 
         val domainStatus = try {
             com.example.subrek.features.subscription.domain.model.SubscriptionStatus.valueOf(status.uppercase())
         } catch (e: Exception) {
-            com.example.subrek.features.subscription.domain.model.SubscriptionStatus.ACTIVE // Default fallback
+            com.example.subrek.features.subscription.domain.model.SubscriptionStatus.ACTIVE
         }
 
         val subscription = com.example.subrek.features.subscription.domain.model.Subscription(
@@ -290,44 +194,14 @@ class SubscriptionRepositoryImpl @Inject constructor(
             updatedAt = LocalDate.now(),
             iconUrl = iconUrl
         )
-        
-        // 1. Simpan ke Database Lokal (Room) terlebih dahulu (Offline-First)
-        insertSubscription(subscription)
 
-        // 2. Kirim ke Remote (Supabase) jika user terautentikasi
-        if (userId != null) {
-            try {
-                val dto = SubscriptionDto(
-                    id = id,
-                    userId = userId,
-                    name = name,
-                    price = price,
-                    currency = currency.ifBlank { "IDR" },
-                    billingCycle = billingCycle.uppercase(),
-                    nextPaymentDate = nextPaymentDate,
-                    paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
-                    isTrial = status.uppercase() == "TRIAL",
-                    isGhostSubscription = false,
-                    status = status.uppercase(),
-                    createdAt = LocalDate.now().toString(),
-                    iconUrl = iconUrl
-                )
-                supabaseClient.postgrest["subscriptions"].insert(dto)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                // Data tetap aman di lokal dan akan disinkronkan nanti
-            }
-        }
+        // Menyimpan data murni ke Database Lokal
+        insertSubscription(subscription)
     }
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
-        return try {
-            val session = (supabaseClient.auth.sessionStatus.value as? SessionStatus.Authenticated)?.session
-            val userId = session?.user?.id ?: return null
-            "https://placeholder.co/100"
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        // Supabase Storage dihilangkan.
+        // Kini hanya mengembalikan path lokal perangkat sebagai String agar tetap bisa dimuat oleh antarmuka (UI).
+        return uri.toString()
     }
 }

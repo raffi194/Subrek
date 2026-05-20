@@ -15,16 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.subrek.core.theme.SubrekTheme
-import com.example.subrek.features.auth.domain.usecase.CheckAuthSessionUseCase
-import com.example.subrek.features.onboarding.presentation.viewmodel.OnboardingViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject
-    lateinit var checkAuthSessionUseCase: CheckAuthSessionUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

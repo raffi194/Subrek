@@ -19,8 +19,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.subrek.features.auth.presentation.AuthViewModel
-import com.example.subrek.features.auth.presentation.screens.AuthScreen
 import com.example.subrek.features.dashboard.presentation.screens.DashboardScreen
 import com.example.subrek.features.dashboard.presentation.viewmodel.DashboardViewModel
 import com.example.subrek.features.onboarding.presentation.screens.OnboardingScreen
@@ -38,7 +36,6 @@ import com.example.subrek.features.subscription.presentation.viewmodel.TambahLan
 
 sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
-    object Auth : Screen("auth_screen")
     object Dashboard : Screen("homepage")
     object TambahLangganan : Screen("tambah_langganan")
     object Profile : Screen("profile")
@@ -58,26 +55,25 @@ private val bottomNavRoutes = setOf(
 
 @Composable
 fun MainNavigation(
-    navController: NavHostController = rememberNavController(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    navController: NavHostController = rememberNavController()
 ) {
     val onboardingViewModel: OnboardingViewModel = hiltViewModel()
-    val isUserLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
     val onboardingUiState by onboardingViewModel.uiState.collectAsState()
 
-    // Jika data onboarding completed atau session masih memuat (null), berikan layar pemuat sementara yang aman
-    if (isUserLoggedIn == null || onboardingUiState.isOnboardingCompleted == null) {
+    // Jika data onboarding completed masih memuat (null), berikan layar pemuat sementara yang aman
+    if (onboardingUiState.isOnboardingCompleted == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
-    val startDestination = remember(isUserLoggedIn, onboardingUiState.isOnboardingCompleted) {
-        when {
-            isUserLoggedIn == true -> Screen.Dashboard.route
-            onboardingUiState.isOnboardingCompleted == false -> Screen.Onboarding.route
-            else -> Screen.Auth.route
+    // Tentukan layar pertama berdasarkan status onboarding
+    val startDestination = remember(onboardingUiState.isOnboardingCompleted) {
+        if (onboardingUiState.isOnboardingCompleted == true) {
+            Screen.Dashboard.route
+        } else {
+            Screen.Onboarding.route
         }
     }
 
@@ -101,19 +97,8 @@ fun MainNavigation(
                 OnboardingScreen(
                     viewModel = onboardingViewModel,
                     onNavigateToDashboard = {
-                        navController.navigate(Screen.Auth.route) {
-                            popUpTo(Screen.Onboarding.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
-            composable(Screen.Auth.route) {
-                AuthScreen(
-                    viewModel = authViewModel,
-                    onAuthSuccess = {
                         navController.navigate(Screen.Dashboard.route) {
-                            popUpTo(Screen.Auth.route) { inclusive = true }
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     }
                 )
@@ -145,12 +130,9 @@ fun MainNavigation(
             composable(Screen.Profile.route) {
                 val viewModel: ProfileViewModel = hiltViewModel()
                 ProfileScreen(
-                    viewModel = viewModel,
-                    onNavigateToLogin = {
-                        navController.navigate(Screen.Auth.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
+                    viewModel = viewModel
+                    // Catatan: Pastikan Anda juga menghapus argumen 'onNavigateToLogin'
+                    // di dalam komponen ProfileScreen.kt Anda, karena fitur logout sudah tidak ada.
                 )
             }
 

@@ -84,4 +84,4 @@ interface SubscriptionRepository {
     )
 
     suspend fun uploadAppIconStorage(uri: android.net.Uri): String?
-}
+    suspend fun deleteCustomApp(id: String)}

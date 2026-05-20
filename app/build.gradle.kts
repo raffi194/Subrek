@@ -78,12 +78,6 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
-    // Supabase Remote Backend Engine
-    implementation(libs.supabaseKt)
-    implementation(libs.supabasePostgrest)
-    implementation(libs.supabaseAuth)
-    implementation(libs.ktor.client.android)
-
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

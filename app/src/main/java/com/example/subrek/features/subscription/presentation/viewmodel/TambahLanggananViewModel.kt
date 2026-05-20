@@ -90,6 +90,11 @@ class TambahLanggananViewModel @Inject constructor(
         addCustomAppWithImage(name, price, currency, billingCycle, paymentMethod, nextPaymentDate, null)
     }
 
+    fun deleteApp(item: CatalogItem) {
+        viewModelScope.launch {
+            repository.deleteCustomApp(item.id) // Kirim ID saja
+        }
+    }
     fun addCustomAppWithImage(
         name: String,
         price: Double,
@@ -135,6 +140,5 @@ class TambahLanggananViewModel @Inject constructor(
             _uiState.update { it.copy(isSaveSuccess = true) }
         }
     }
-    
     fun resetSaveSuccess() { _uiState.update { it.copy(isSaveSuccess = false) } }
 }

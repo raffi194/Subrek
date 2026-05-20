@@ -3,6 +3,7 @@ package com.example.subrek.features.subscription.presentation.screens
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,16 +42,28 @@ fun TambahLanggananScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var selectedAppForForm by remember { mutableStateOf<CatalogItem?>(null) }
-    
+
     var showAppDialog by remember { mutableStateOf(false) }
 
     // State Input Form Detail Berlangganan
     var priceInput by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("") }
-    var selectedCycle by remember { mutableStateOf("MONTHLY") }
+    var selectedCycle by remember { mutableStateOf("Monthly") }
     var startDateInput by remember { mutableStateOf("") }
     var isFreeTrial by remember { mutableStateOf(false) }
     var isCycleDropdownExpanded by remember { mutableStateOf(false) }
+
+    val calendar = Calendar.getInstance()
+    val mainDatePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+            startDateInput = selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     if (uiState.isSaveSuccess) {
         LaunchedEffect(Unit) {
@@ -64,9 +78,8 @@ fun TambahLanggananScreen(
             TopAppBar(
                 title = { Text("Tambah Langganan", fontWeight = FontWeight.Bold) },
                 actions = {
-                    // 🛠️ Button "+ Kategori" telah dihapus sepenuhnya di sini
-                    IconButton(onClick = { showAppDialog = true }) { 
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah App Baru") 
+                    IconButton(onClick = { showAppDialog = true }) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Tambah App Baru")
                     }
                 }
             )
@@ -81,17 +94,15 @@ fun TambahLanggananScreen(
                     .navigationBarsPadding()
             ) {
                 if (selectedAppForForm == null) {
-                    // 1. SEARCH FIELD
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = { viewModel.updateSearchQuery(it) },
-                        placeholder = { Text("Cari spesifik app subscriptions...") },
+                        placeholder = { Text("Cari spesifik app subscriptions...", color = Color.Gray.copy(alpha = 0.5f)) },
                         leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    // 2. RENDERING LIST ITEM KATALOG
                     val filteredItems = uiState.catalogItems.filter { item ->
                         item.name.contains(uiState.searchQuery, ignoreCase = true)
                     }
@@ -101,66 +112,142 @@ fun TambahLanggananScreen(
                         modifier = Modifier.fillMaxSize().padding(top = 8.dp)
                     ) {
                         items(filteredItems, key = { it.id }) { app ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        AsyncImage(
-                                            model = app.iconUrl ?: "https://placeholder.co/100",
-                                            contentDescription = null,
-                                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
-                                        )
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        Column {
-                                            Text(text = app.name, fontWeight = FontWeight.SemiBold)
+                            // --- Implementasi Swipe to Delete ---
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = {
+                                    if (it == SwipeToDismissBoxValue.EndToStart) {
+                                        viewModel.deleteApp(app)
+                                        true
+                                    } else false
+                                }
+                            )
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
+                                        MaterialTheme.colorScheme.error else Color.Transparent
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(vertical = 4.dp)
+                                            .background(color, RoundedCornerShape(12.dp)),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.White, modifier = Modifier.padding(end = 16.dp))
+                                    }
+                                },
+                                content = {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                AsyncImage(
+                                                    model = app.iconUrl ?: "https://placeholder.co/100",
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                                                )
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Column {
+                                                    Text(text = app.name, fontWeight = FontWeight.SemiBold)
+                                                }
+                                            }
+                                            Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
                                         }
                                     }
-                                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
                                 }
-                            }
+                            )
                         }
                     }
                 } else {
-                    // 3. FORM DETAIL BERLANGGANAN (DIBUKA SAAT KATALOG DI-KLIK)
+                    // FORM DETAIL BERLANGGANAN (Sama seperti kode asli Anda)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize().padding(top = 8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-                            AsyncImage(model = selectedAppForForm?.iconUrl ?: "https://placeholder.co/100", contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
+                            AsyncImage(
+                                model = selectedAppForForm?.iconUrl ?: "https://placeholder.co/100",
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp))
+                            )
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(text = selectedAppForForm?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         }
 
-                        OutlinedTextField(value = priceInput, onValueChange = { priceInput = it }, label = { Text("Biaya Berlangganan (Rp)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = paymentMethod, onValueChange = { paymentMethod = it }, label = { Text("Metode Pembayaran") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(
+                            value = priceInput,
+                            onValueChange = { priceInput = it },
+                            label = { Text("Biaya Berlangganan") },
+                            placeholder = { Text("0", color = Color.Gray.copy(alpha = 0.5f)) },
+                            leadingIcon = { Text("Rp ", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = paymentMethod,
+                            onValueChange = { paymentMethod = it },
+                            label = { Text("Metode Pembayaran") },
+                            placeholder = { Text("Contoh: Gopay, Bank Transfer...", color = Color.Gray.copy(alpha = 0.5f)) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            ExposedDropdownMenuBox(expanded = isCycleDropdownExpanded, onExpandedChange = { isCycleDropdownExpanded = !isCycleDropdownExpanded }) {
+                            ExposedDropdownMenuBox(
+                                expanded = isCycleDropdownExpanded,
+                                onExpandedChange = { isCycleDropdownExpanded = !isCycleDropdownExpanded }
+                            ) {
                                 OutlinedTextField(
-                                    value = selectedCycle, 
-                                    onValueChange = {}, 
-                                    readOnly = true, 
-                                    label = { Text("Siklus Penagihan") }, 
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCycleDropdownExpanded) }, 
+                                    value = selectedCycle,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Siklus Penagihan") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCycleDropdownExpanded) },
                                     modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                 )
-                                ExposedDropdownMenu(expanded = isCycleDropdownExpanded, onDismissRequest = { isCycleDropdownExpanded = false }) {
-                                    listOf("MONTHLY", "YEARLY").forEach { opt ->
-                                        DropdownMenuItem(text = { Text(opt) }, onClick = { selectedCycle = opt; isCycleDropdownExpanded = false })
+                                ExposedDropdownMenu(
+                                    expanded = isCycleDropdownExpanded,
+                                    onDismissRequest = { isCycleDropdownExpanded = false }
+                                ) {
+                                    listOf("Weekly", "Monthly", "Yearly").forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = { Text(opt) },
+                                            onClick = { selectedCycle = opt; isCycleDropdownExpanded = false }
+                                        )
                                     }
                                 }
                             }
                         }
 
-                        OutlinedTextField(value = startDateInput, onValueChange = { startDateInput = it }, label = { Text("Tanggal Mulai Penagihan (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
+                        val interactionSource = remember { MutableInteractionSource() }
+                        OutlinedTextField(
+                            value = startDateInput,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tanggal Mulai Penagihan") },
+                            placeholder = { Text("Pilih Tanggal", color = Color.Gray.copy(alpha = 0.5f)) },
+                            trailingIcon = {
+                                IconButton(onClick = { mainDatePickerDialog.show() }) {
+                                    Icon(imageVector = Icons.Default.DateRange, contentDescription = "Pilih Tanggal")
+                                }
+                            },
+                            interactionSource = interactionSource,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { mainDatePickerDialog.show() }
+                                )
+                        )
 
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Layanan Free Trial", fontWeight = FontWeight.Medium)
@@ -174,10 +261,10 @@ fun TambahLanggananScreen(
                                     name = selectedAppForForm!!.name,
                                     iconUrl = selectedAppForForm!!.iconUrl,
                                     price = cleanPrice,
-                                    currency = "IDR", // Default valuta disesuaikan skema tabel
-                                    cycle = selectedCycle,
-                                    paymentMethod = paymentMethod.ifBlank { "E-Wallet" },
-                                    date = startDateInput.ifBlank { "2026-05-20" },
+                                    currency = "IDR",
+                                    cycle = selectedCycle.uppercase(),
+                                    paymentMethod = paymentMethod.ifBlank { "Lainnya" },
+                                    date = startDateInput.ifBlank { LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                                     isTrial = isFreeTrial
                                 )
                             },
@@ -185,22 +272,21 @@ fun TambahLanggananScreen(
                         ) {
                             Text("Simpan Langganan", fontWeight = FontWeight.Bold)
                         }
-                        
+
                         TextButton(onClick = { selectedAppForForm = null }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Kembali ke Katalog") }
                     }
                 }
             }
 
             // =========================================================================
-            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM (DIALOG KATEGORI TELAH DIHAPUS)
+            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM
             // =========================================================================
             if (showAppDialog) {
                 var appName by remember { mutableStateOf("") }
                 var appPrice by remember { mutableStateOf("") }
-                var appCurrency by remember { mutableStateOf("IDR") }
-                var appCycle by remember { mutableStateOf("MONTHLY") }
-                var appPaymentMethod by remember { mutableStateOf("E-Wallet") }
-                var appDate by remember { mutableStateOf("2026-05-19") }
+                var appCycle by remember { mutableStateOf("Monthly") }
+                var appPaymentMethod by remember { mutableStateOf("") }
+                var appDate by remember { mutableStateOf("") }
                 var isAppCycleExpanded by remember { mutableStateOf(false) }
 
                 var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
@@ -211,9 +297,8 @@ fun TambahLanggananScreen(
                     selectedImageUri = uri
                 }
 
-                // 🛠️ PERBAIKAN: Integrasi Native DatePickerDialog untuk Form Kustom Dialog
-                val calendar = Calendar.getInstance()
-                val datePickerDialog = DatePickerDialog(
+                // Setup DatePicker Dialog untuk Custom App
+                val customAppDatePickerDialog = DatePickerDialog(
                     context,
                     { _, year, month, dayOfMonth ->
                         val selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
@@ -261,11 +346,11 @@ fun TambahLanggananScreen(
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column {
-                                    Text("Icon Aplikasi Profile", fontWeight = FontWeight.SemiBold)
+                                    Text("Ikon Aplikasi", fontWeight = FontWeight.SemiBold)
                                     Text(
-                                        text = if (selectedImageUri != null) "Gambar terpilih (Klik untuk ganti)" else "Klik untuk upload file gambar",
+                                        text = if (selectedImageUri != null) "Gambar terpilih" else "Tidak Wajib Diisi",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = if (selectedImageUri != null) MaterialTheme.colorScheme.primary else Color.Gray
                                     )
                                 }
                             }
@@ -274,27 +359,19 @@ fun TambahLanggananScreen(
                                 value = appName,
                                 onValueChange = { appName = it },
                                 label = { Text("Nama Aplikasi *") },
+                                placeholder = { Text("Contoh: Mola TV", color = Color.Gray.copy(alpha = 0.5f)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = appCurrency,
-                                    onValueChange = { appCurrency = it },
-                                    label = { Text("Valuta") },
-                                    modifier = Modifier.weight(0.3f)
-                                )
-                                OutlinedTextField(
-                                    value = appPrice,
-                                    onValueChange = { appPrice = it },
-                                    label = { Text("Biaya *") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(0.7f)
-                                )
-                            }
+                            OutlinedTextField(
+                                value = appPrice,
+                                onValueChange = { appPrice = it },
+                                label = { Text("Biaya *") },
+                                placeholder = { Text("0", color = Color.Gray.copy(alpha = 0.5f)) },
+                                leadingIcon = { Text("Rp ", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 ExposedDropdownMenuBox(
@@ -313,7 +390,7 @@ fun TambahLanggananScreen(
                                         expanded = isAppCycleExpanded,
                                         onDismissRequest = { isAppCycleExpanded = false }
                                     ) {
-                                        listOf("MONTHLY", "YEARLY").forEach { opt ->
+                                        listOf("Weekly", "Monthly", "Yearly").forEach { opt ->
                                             DropdownMenuItem(
                                                 text = { Text(opt) },
                                                 onClick = { appCycle = opt; isAppCycleExpanded = false }
@@ -327,37 +404,46 @@ fun TambahLanggananScreen(
                                 value = appPaymentMethod,
                                 onValueChange = { appPaymentMethod = it },
                                 label = { Text("Metode Pembayaran *") },
+                                placeholder = { Text("Contoh: Gopay, dll", color = Color.Gray.copy(alpha = 0.5f)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            // 🛠️ PERBAIKAN: Mengubah input manual tanggal menjadi visual dialog picker
+                            val customInteractionSource = remember { MutableInteractionSource() }
                             OutlinedTextField(
                                 value = appDate,
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Tanggal Mulai Penagihan *") },
+                                label = { Text("Tanggal Mulai *") },
+                                placeholder = { Text("Pilih Tanggal", color = Color.Gray.copy(alpha = 0.5f)) },
                                 trailingIcon = {
-                                    IconButton(onClick = { datePickerDialog.show() }) {
+                                    IconButton(onClick = { customAppDatePickerDialog.show() }) {
                                         Icon(imageVector = Icons.Default.DateRange, contentDescription = "Pilih Tanggal")
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() }
+                                interactionSource = customInteractionSource,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(
+                                        interactionSource = customInteractionSource,
+                                        indication = null,
+                                        onClick = { customAppDatePickerDialog.show() }
+                                    )
                             )
                         }
                     },
                     confirmButton = {
                         Button(
                             onClick = {
-                                if (appName.isNotBlank() && appPrice.isNotBlank()) {
+                                if (appName.isNotBlank() && appPrice.isNotBlank() && appPaymentMethod.isNotBlank() && appDate.isNotBlank()) {
                                     val cleanPrice = appPrice.replace(",", ".").toDoubleOrNull() ?: 0.0
 
                                     viewModel.addCustomAppWithImage(
                                         name = appName,
                                         price = cleanPrice,
-                                        currency = appCurrency.ifBlank { "IDR" },
-                                        billingCycle = appCycle,
+                                        currency = "IDR",
+                                        billingCycle = appCycle.uppercase(),
                                         paymentMethod = appPaymentMethod,
-                                        nextPaymentDate = appDate.ifBlank { "2026-05-19" },
+                                        nextPaymentDate = appDate,
                                         imageUri = selectedImageUri
                                     )
                                     showAppDialog = false

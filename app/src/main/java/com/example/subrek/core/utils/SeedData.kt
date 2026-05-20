@@ -110,8 +110,8 @@ object SeedData {
             isGhostSubscription = false,
             status = "ACTIVE",
             unconfirmedCyclesCount = 0,
-            createdAt = today.minusMonths(3).format(fmt),
-            isDirty = false
+            createdAt = today.minusMonths(3).format(fmt)
+            // isDirty DIHAPUS
         ),
         SubscriptionEntity(
             id = "demo_spotify",
@@ -126,8 +126,8 @@ object SeedData {
             isGhostSubscription = false,
             status = "ACTIVE",
             unconfirmedCyclesCount = 0,
-            createdAt = today.minusMonths(5).format(fmt),
-            isDirty = false
+            createdAt = today.minusMonths(5).format(fmt)
+            // isDirty DIHAPUS
         ),
         SubscriptionEntity(
             id = "demo_youtube",
@@ -142,8 +142,8 @@ object SeedData {
             isGhostSubscription = false,
             status = "ACTIVE",
             unconfirmedCyclesCount = 0,
-            createdAt = today.minusMonths(1).format(fmt),
-            isDirty = false
+            createdAt = today.minusMonths(1).format(fmt)
+            // isDirty DIHAPUS
         ),
         SubscriptionEntity(
             id = "demo_notion",
@@ -158,8 +158,8 @@ object SeedData {
             isGhostSubscription = false,
             status = "TRIAL",
             unconfirmedCyclesCount = 0,
-            createdAt = today.minusMonths(2).format(fmt),
-            isDirty = false
+            createdAt = today.minusMonths(2).format(fmt)
+            // isDirty DIHAPUS
         ),
         SubscriptionEntity(
             id = "demo_old_app",
@@ -174,8 +174,8 @@ object SeedData {
             isGhostSubscription = true,
             status = "ENDED",
             unconfirmedCyclesCount = 3,
-            createdAt = today.minusYears(1).format(fmt),
-            isDirty = false
-        ),
+            createdAt = today.minusYears(1).format(fmt)
+            // isDirty DIHAPUS
+        )
     )
 }

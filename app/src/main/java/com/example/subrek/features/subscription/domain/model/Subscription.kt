@@ -11,20 +11,21 @@ data class Subscription(
     val name: String,
     val price: Double,
     val currency: String,
-    val billingCycle: BillingCycle, // MONTHLY, YEARLY
+    val billingCycle: BillingCycle, // MONTHLY, YEARLY, WEEKLY
     val startDate: LocalDate,
     val nextPaymentDate: LocalDate,
     val paymentMethod: String,
     val isTrial: Boolean,
     val isGhostSubscription: Boolean = false,
     val status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
-    val unconfirmedCyclesCount: Int = 0, 
+    val unconfirmedCyclesCount: Int = 0,
     val createdAt: LocalDate,
     val updatedAt: LocalDate,
     val iconUrl: String? = null
 )
 
 enum class BillingCycle {
+    WEEKLY,  // 👈 DITAMBAHKAN
     MONTHLY,
     YEARLY
 }
@@ -35,5 +36,6 @@ enum class SubscriptionStatus {
     GRACE_PERIOD,
     PAUSED,
     CANCELLED,
-    NEEDS_REVIEW
+    NEEDS_REVIEW,
+    ENDED   // 👈 DITAMBAHKAN
 }

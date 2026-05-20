@@ -1,25 +1,20 @@
 package com.example.subrek.features.dashboard.presentation.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,9 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.subrek.core.theme.*
-import com.example.subrek.core.utils.UiState
-import com.example.subrek.features.dashboard.presentation.components.DonutChartCategories
-import com.example.subrek.features.dashboard.presentation.components.HorizontalBarChartMethods
 import com.example.subrek.features.dashboard.presentation.viewmodel.DashboardViewModel
 import com.example.subrek.features.profile.presentation.viewmodel.ProfileViewModel
 import com.example.subrek.features.subscription.domain.model.Subscription
@@ -46,6 +38,10 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.roundToInt
+import com.example.subrek.core.background.NotificationWorker // Pastikan import class ini
+import androidx.compose.ui.platform.LocalContext
+import androidx.work.WorkManager
+import androidx.work.OneTimeWorkRequestBuilder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,8 +53,8 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val profileState by profileViewModel.uiState.collectAsState()
+    val context = LocalContext.current // Tambahkan ini
 
-    // Pemicu reaktif untuk memastikan data profil ter-refresh langsung dari database setiap screen aktif
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile()
     }
@@ -67,69 +63,82 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        // Avatar profil user
-                        if (!profileState.avatarUrl.isNullOrEmpty()) {
-                            AsyncImage(
-                                model = profileState.avatarUrl,
-                                contentDescription = "Foto Profil",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Slate800)
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Blue600, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
+                    // Diberi batasan ukuran (Box & padding) agar tidak menutupi tombol Plus
+                    Box(modifier = Modifier.padding(end = 16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            if (!profileState.avatarUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = profileState.avatarUrl,
+                                    contentDescription = "Foto Profil",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFF1F5F9))
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Blue600, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = (profileState.fullName?.takeIf { it.isNotEmpty() } ?: "U").take(1).uppercase(),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            Column {
                                 Text(
-                                    text = (profileState.fullName?.takeIf { it.isNotEmpty() } ?: "U").take(1).uppercase(),
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
+                                    text = "Selamat datang,",
+                                    fontSize = 11.sp,
+                                    color = Slate500,
+                                    fontWeight = FontWeight.Normal
+                                )
+                                Text(
+                                    text = when {
+                                        profileState.isLoading -> "Memuat..."
+                                        !profileState.fullName.isNullOrBlank() -> profileState.fullName!!
+                                        else -> "Pengguna"
+                                    },
+                                    fontSize = 14.sp,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
-                        }
-
-                        Column {
-                            Text(
-                                text = "Selamat datang,",
-                                fontSize = 11.sp,
-                                color = Slate400,
-                                fontWeight = FontWeight.Normal
-                            )
-                            // Mengambil data full_name secara dinamis & real-time dari profileState database profiles
-                            Text(
-                                text = when {
-                                    profileState.isLoading -> "Memuat..."
-                                    !profileState.fullName.isNullOrBlank() -> profileState.fullName!!
-                                    else -> "Pengguna"
-                                },
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
                     }
                 },
                 actions = {
-                    // Tombol lonceng notifikasi
-                    IconButton(onClick = { /* TODO: navigate ke log notifikasi */ }) {
+                    // Tombol Notifikasi
+                    IconButton(
+                        onClick = { /* TODO: navigate ke log notifikasi */ },
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Log Notifikasi",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = Color.Black
                         )
                     }
+                    Button(
+                        onClick = {
+                            val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
+                            WorkManager.getInstance(context).enqueue(workRequest)
+                        },
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text("Test Notifikasi")
+                    }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Slate950)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         contentWindowInsets = WindowInsets.statusBars
@@ -137,7 +146,7 @@ fun DashboardScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Slate950)
+                .background(Color.White)
                 .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 80.dp)
@@ -150,33 +159,26 @@ fun DashboardScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Slate900)
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Text(
-                            "Average consumption",
-                            color = Slate400,
+                            "Total Konsumsi Bulan Ini",
+                            color = Slate500,
                             fontSize = 13.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.AttachMoney,
-                                contentDescription = "Icon Biaya",
-                                tint = Blue500,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            val formattedPrice = if (state.averageConsumption > 0) {
+                            val formattedPrice = if (state.totalConsumptionThisMonth > 0) {
                                 NumberFormat
                                     .getCurrencyInstance(Locale.forLanguageTag("id-ID"))
-                                    .format(state.averageConsumption)
+                                    .format(state.totalConsumptionThisMonth)
                             } else {
                                 "Rp 0"
                             }
                             Text(
                                 formattedPrice,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = Color.Black,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Black
                             )
@@ -185,43 +187,25 @@ fun DashboardScreen(
                         Text(
                             text = "Aplikasi Aktif: ${state.activeAppsCount}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (state.activeAppsCount > 0) Blue500 else Slate400,
+                            color = if (state.activeAppsCount > 0) Blue600 else Slate500,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
 
-            // 2. CHART VISUALISASI (hanya jika data >= 2)
-            item {
-                AnimatedVisibility(
-                    visible = state.rawSubscriptions.size >= 2,
-                    enter = fadeIn() + expandVertically()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        DonutChartCategories(subscriptions = state.rawSubscriptions)
-                        HorizontalBarChartMethods(subscriptions = state.rawSubscriptions)
-                    }
-                }
-            }
-
-            // 3. JUDUL DAFTAR AKTIF
+            // 2. JUDUL DAFTAR AKTIF
             item {
                 Text(
                     text = "Active Subscriptions",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = Color.Black,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                 )
             }
 
-            // 5. LIST AKTIF DENGAN SWIPE-TO-DELETE
+            // 3. LIST AKTIF DENGAN SWIPE-TO-DELETE & TOMBOL BAYAR
             if (state.subscriptionsList.isEmpty()) {
                 item {
                     Box(
@@ -232,7 +216,7 @@ fun DashboardScreen(
                     ) {
                         Text(
                             "Tidak ada langganan aktif ditemukan",
-                            color = Slate400,
+                            color = Slate500,
                             fontSize = 14.sp
                         )
                     }
@@ -240,39 +224,12 @@ fun DashboardScreen(
             } else {
                 items(state.subscriptionsList, key = { it.id }) { item ->
                     Box(modifier = Modifier.padding(horizontal = 24.dp)) {
-                        // ---------------------------------------------------------
-                        // PERBAIKAN GAP 2: SwipeToDelete pada setiap item aktif
-                        // ---------------------------------------------------------
                         SwipeToDeleteSubscriptionItem(
                             subscription = item,
                             onDelete = { viewModel.deleteSubscription(item.id) },
-                            onClick = { onNavigateToDetail(item.id) }
+                            onClick = { onNavigateToDetail(item.id) },
+                            onMarkPaid = { viewModel.markAsPaid(item) }
                         )
-                    }
-                }
-            }
-
-            // -----------------------------------------------------------------
-            // PERBAIKAN GAP 3: Card Riwayat Subscriptions di bagian bawah
-            // -----------------------------------------------------------------
-            if (state.subscriptionHistory.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Riwayat Subscriptions",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(
-                            start = 24.dp,
-                            end = 24.dp,
-                            top = 8.dp,
-                            bottom = 4.dp
-                        )
-                    )
-                }
-                items(state.subscriptionHistory, key = { "history_${it.id}" }) { item ->
-                    Box(modifier = Modifier.padding(horizontal = 24.dp)) {
-                        SubscriptionHistoryItem(subscription = item)
                     }
                 }
             }
@@ -281,15 +238,14 @@ fun DashboardScreen(
 }
 
 // =============================================================================
-// PERBAIKAN GAP 2: Composable SwipeToDelete
-// Menggunakan draggable manual agar tidak perlu library tambahan.
-// Threshold swipe kiri 120dp → tombol delete muncul, swipe habis → konfirmasi hapus.
+// Composable SwipeToDelete
 // =============================================================================
 @Composable
 fun SwipeToDeleteSubscriptionItem(
     subscription: Subscription,
     onDelete: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMarkPaid: () -> Unit
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     val revealThreshold = -120.dp.value
@@ -309,7 +265,7 @@ fun SwipeToDeleteSubscriptionItem(
             },
             title = { Text("Hapus Langganan?") },
             text = {
-                Text("Langganan \"${subscription.name}\" akan dihapus secara permanen dari lokal dan cloud.")
+                Text("Langganan \"${subscription.name}\" akan dihapus secara permanen dari lokal.")
             },
             confirmButton = {
                 Button(
@@ -338,7 +294,6 @@ fun SwipeToDeleteSubscriptionItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
     ) {
-        // Layer background merah dengan ikon trash (terlihat saat digeser kiri)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -353,28 +308,23 @@ fun SwipeToDeleteSubscriptionItem(
             )
         }
 
-        // Layer konten item di atas background
         Box(
             modifier = Modifier
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
                 .draggable(
                     orientation = Orientation.Horizontal,
                     state = rememberDraggableState { delta ->
-                        // Hanya izinkan geser ke kiri (nilai negatif), maksimum -320dp
                         val newOffset = (offsetX + delta).coerceIn(-320.dp.value, 0f)
                         offsetX = newOffset
                     },
                     onDragStopped = {
                         when {
-                            // Swipe sangat jauh → langsung trigger konfirmasi hapus
                             offsetX < dismissThreshold -> {
                                 showConfirmDialog = true
                             }
-                            // Swipe setengah → pertahankan posisi reveal tombol delete
                             offsetX < revealThreshold -> {
                                 offsetX = revealThreshold
                             }
-                            // Swipe sedikit → snap kembali ke posisi awal
                             else -> {
                                 offsetX = 0f
                             }
@@ -384,24 +334,27 @@ fun SwipeToDeleteSubscriptionItem(
         ) {
             SubscriptionItemRow(
                 sub = subscription,
-                onClick = onClick
+                onClick = onClick,
+                onMarkPaid = onMarkPaid
             )
         }
     }
 }
 
 // =============================================================================
-// SubscriptionItemRow — ditambahkan parameter onClick untuk navigasi ke detail
+// SubscriptionItemRow
 // =============================================================================
 @Composable
 fun SubscriptionItemRow(
     sub: Subscription,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onMarkPaid: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Slate900, shape = RoundedCornerShape(16.dp))
+            .background(Color(0xFFF8FAFC), shape = RoundedCornerShape(16.dp))
+            // Clickable dihapus dari Row agar geser (swipe) tidak macet
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -411,12 +364,14 @@ fun SubscriptionItemRow(
                 sub.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onBackground
+                color = Color.Black,
+                // Clickable dipindah ke teks nama agar tetap bisa diklik untuk detail
+                modifier = Modifier.clickable { onClick() }
             )
             Text(
                 sub.paymentMethod,
                 fontSize = 12.sp,
-                color = Slate400
+                color = Slate500
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -426,6 +381,8 @@ fun SubscriptionItemRow(
             when {
                 sub.status == SubscriptionStatus.TRIAL ->
                     BadgeCard("Trial Berakhir", Amber500.copy(alpha = 0.15f), Amber500)
+                daysDiff < 0L ->
+                    BadgeCard("Terlewat ${kotlin.math.abs(daysDiff)} Hari", Rose500.copy(alpha = 0.15f), Rose500)
                 daysDiff == 0L ->
                     BadgeCard("Hari Ini", Rose500.copy(alpha = 0.15f), Rose500)
                 daysDiff in 1..3 ->
@@ -434,8 +391,21 @@ fun SubscriptionItemRow(
                     BadgeCard("Segera Jatuh Tempo", Amber500.copy(alpha = 0.15f), Amber500)
                 else -> {
                     val formattedDate = sub.nextPaymentDate
-                        .format(DateTimeFormatter.ofPattern("dd MMM"))
-                    BadgeCard("Tempo $formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
+                        .format(DateTimeFormatter.ofPattern("dd MMM yy", Locale.ENGLISH))
+                    BadgeCard("Tempo: $formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
+                }
+            }
+
+            if (daysDiff < 0L && (sub.status == SubscriptionStatus.ACTIVE || sub.status == SubscriptionStatus.TRIAL)) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onMarkPaid,
+                    colors = ButtonDefaults.buttonColors(containerColor = Blue600),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(30.dp)
+                ) {
+                    Text("Tandai Dibayar", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
@@ -448,12 +418,12 @@ fun SubscriptionItemRow(
                 formattedPrice,
                 fontWeight = FontWeight.Black,
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onBackground
+                color = Color.Black
             )
             Text(
                 "/${sub.billingCycle.name.lowercase()}",
                 fontSize = 11.sp,
-                color = Slate400
+                color = Slate500
             )
         }
     }
@@ -471,62 +441,5 @@ fun BadgeCard(
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(text, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
-    }
-}
-
-// =============================================================================
-// PERBAIKAN GAP 3: Composable item untuk Card Riwayat (status ENDED)
-// Tampilan berbeda dari item aktif — grayscale, badge "Berakhir"
-// =============================================================================
-@Composable
-fun SubscriptionHistoryItem(subscription: Subscription) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Slate900.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(modifier = Modifier.weight(0.6f)) {
-            Text(
-                subscription.name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = Slate400 // Muted — menandakan sudah tidak aktif
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .background(Slate800, shape = RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    "Berakhir",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate400
-                )
-            }
-        }
-        Column(modifier = Modifier.weight(0.4f), horizontalAlignment = Alignment.End) {
-            val formattedPrice = NumberFormat
-                .getCurrencyInstance(Locale.forLanguageTag("id-ID"))
-                .format(subscription.price)
-            Text(
-                formattedPrice,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = Slate400
-            )
-            Text(
-                "/${subscription.billingCycle.name.lowercase()}",
-                fontSize = 11.sp,
-                color = Slate400.copy(alpha = 0.5f)
-            )
-        }
     }
 }

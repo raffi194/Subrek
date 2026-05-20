@@ -24,8 +24,7 @@ interface SubscriptionDao {
     @Query("DELETE FROM subscriptions WHERE id = :id")
     suspend fun deleteSubscriptionById(id: String)
 
-    @Query("SELECT * FROM subscriptions WHERE is_dirty = 1")
-    suspend fun getDirtySubscriptions(): List<SubscriptionEntity>
+    // FUNGSI getDirtySubscriptions() TELAH DIHAPUS
 
     @Query("""
         SELECT COALESCE(AVG(
@@ -57,6 +56,7 @@ interface SubscriptionDao {
     // Statistik: Total pengeluaran bulanan (estimasi)
     @Query("SELECT SUM(price) FROM subscriptions WHERE status IN ('ACTIVE', 'TRIAL')")
     fun getTotalMonthlyExpense(): Flow<Double?>
+
     @Query("SELECT * FROM subscriptions WHERE id = :id LIMIT 1")
     fun getSubscriptionByIdFlow(id: String): Flow<SubscriptionEntity?>
 
@@ -82,4 +82,7 @@ interface SubscriptionDao {
 
     @Query("SELECT * FROM local_apps")
     fun getCustomApps(): Flow<List<LocalAppEntity>>
+
+    @Query("DELETE FROM local_apps WHERE id = :id")
+    suspend fun deleteCustomApp(id: String)
 }

@@ -10,6 +10,7 @@ import com.example.subrek.features.subscription.domain.repository.SubscriptionRe
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 data class DashboardUiState(
@@ -19,7 +20,7 @@ data class DashboardUiState(
     val statsState: UiState<DashboardStats> = UiState.Loading,
     val userName: String = "User",
     val userAvatarUrl: String? = null,
-    val averageConsumption: Double = 0.0,
+    val totalConsumptionThisMonth: Double = 0.0,
     val activeAppsCount: Int = 0,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
@@ -40,10 +41,6 @@ class DashboardViewModel @Inject constructor(
     }
 
     private fun observeStats() {
-        repository.getAverageConsumption()
-            .onEach { value -> _uiState.update { it.copy(averageConsumption = value) } }
-            .launchIn(viewModelScope)
-
         repository.getActiveSubscriptionsCount()
             .onEach { count -> _uiState.update { it.copy(activeAppsCount = count) } }
             .launchIn(viewModelScope)
@@ -58,28 +55,40 @@ class DashboardViewModel @Inject constructor(
                 }
                 .collect { subs ->
                     val stats = getDashboardStatsUseCase(subs)
+
+                    // Menghitung pengeluaran khusus bulan ini
+                    val currentMonth = LocalDate.now().month
+                    val activeSubs = subs.filter { it.status.name == "ACTIVE" || it.status.name == "TRIAL" }
+
+                    val totalThisMonth = activeSubs.sumOf { sub ->
+                        when (sub.billingCycle.name) {
+                            "MONTHLY" -> sub.price
+                            "WEEKLY" -> sub.price * 4.0
+                            "YEARLY" -> {
+                                if (sub.nextPaymentDate.month == currentMonth) sub.price else 0.0
+                            }
+                            else -> 0.0
+                        }
+                    }
+
                     _uiState.update { it.copy(
                         rawSubscriptions = subs,
                         statsState = UiState.Success(stats),
+                        totalConsumptionThisMonth = totalThisMonth,
                         isLoading = false
                     ) }
                     applyFilter()
-
-                    // Melakukan force sync data lokal ke remote (termasuk verifikasi session data user profiles)
-                    repository.syncWithRemote()
                 }
         }
-        // Load riwayat langganan yang sudah berakhir (status = ENDED)
         viewModelScope.launch {
             repository.getSubscriptionHistory()
-                .catch { /* silent fail, history bukan data kritis */ }
+                .catch { /* silent fail */ }
                 .collect { history ->
                     _uiState.update { it.copy(subscriptionHistory = history) }
                 }
         }
     }
 
-    // 🛠️ DIUBAH: Disederhanakan karena penyaringan kategori tidak diperlukan lagi
     private fun applyFilter() {
         val current = _uiState.value
         _uiState.update { it.copy(subscriptionsList = current.rawSubscriptions) }
@@ -87,13 +96,23 @@ class DashboardViewModel @Inject constructor(
 
     fun deleteSubscription(subscriptionId: String) {
         viewModelScope.launch {
-            repository.deleteSubscriptionFromLocalAndRemote(subscriptionId)
+            repository.deleteSubscription(subscriptionId)
         }
     }
 
-    fun triggerSync() {
+    // 👈 FITUR BARU: Menandai subscription telah dibayar dan memajukan tanggal siklus berikutnya
+    fun markAsPaid(subscription: Subscription) {
         viewModelScope.launch {
-            repository.syncWithRemote()
+            val updatedSub = subscription.copy(
+                nextPaymentDate = when (subscription.billingCycle.name) {
+                    "WEEKLY" -> subscription.nextPaymentDate.plusWeeks(1)
+                    "MONTHLY" -> subscription.nextPaymentDate.plusMonths(1)
+                    "YEARLY" -> subscription.nextPaymentDate.plusYears(1)
+                    else -> subscription.nextPaymentDate.plusMonths(1)
+                },
+                updatedAt = LocalDate.now()
+            )
+            repository.insertSubscription(updatedSub)
         }
     }
 }

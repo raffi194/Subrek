@@ -1,10 +1,9 @@
 package com.example.subrek.features.profile.presentation.viewmodel
 
+import android.content.SharedPreferences
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.subrek.features.auth.domain.repository.AuthRepository
-import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    // Menggunakan SharedPreferences untuk menyimpan data profil secara lokal
+    private val sharedPreferences: SharedPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -29,12 +29,15 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val userProfile = authRepository.getCurrentUserProfile()
+                // 1. Ambil data profil dari SharedPreferences (Penyimpanan Lokal)
+                val localName = sharedPreferences.getString("pref_full_name", "Pengguna Subrek") ?: "Pengguna Subrek"
+                val localAvatar = sharedPreferences.getString("pref_avatar_url", null)
+
                 _uiState.update { it.copy(
-                    id = userProfile.id,
-                    email = userProfile.email,
-                    fullName = userProfile.fullName,
-                    avatarUrl = userProfile.avatarUrl,
+                    id = "local_user", // ID Dummy
+                    email = "offline@subrek.app", // Email dummy atau bisa dihapus dari UI
+                    fullName = localName,
+                    avatarUrl = localAvatar,
                     isLoading = false
                 )}
             } catch (e: Exception) {
@@ -49,25 +52,24 @@ class ProfileViewModel @Inject constructor(
             try {
                 var finalAvatarUrl = _uiState.value.avatarUrl
 
-                // 1. Jika ada file gambar baru yang di-pick, upload ke Supabase Storage Bucket
+                // 2. Gunakan URI lokal langsung sebagai string (Tidak diunggah ke internet)
                 if (newImageUri != null) {
-                    finalAvatarUrl = authRepository.uploadAvatarToStorage(newImageUri)
+                    finalAvatarUrl = newImageUri.toString()
                 }
 
-                // 2. Update kolom full_name dan avatar_url ke database public.profiles
-                authRepository.updateProfileFields(
-                    fullName = newFullName,
-                    avatarUrl = finalAvatarUrl
-                ).onSuccess {
-                    _uiState.update { it.copy(
-                        fullName = newFullName,
-                        avatarUrl = finalAvatarUrl,
-                        isLoading = false,
-                        isUpdateSuccess = true
-                    )}
-                }.onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                // 3. Simpan perubahan ke SharedPreferences
+                sharedPreferences.edit().apply {
+                    putString("pref_full_name", newFullName)
+                    putString("pref_avatar_url", finalAvatarUrl)
+                    apply()
                 }
+
+                _uiState.update { it.copy(
+                    fullName = newFullName,
+                    avatarUrl = finalAvatarUrl,
+                    isLoading = false,
+                    isUpdateSuccess = true
+                )}
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
             }
@@ -78,17 +80,6 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(isUpdateSuccess = false, errorMessage = null) }
     }
 
-    fun logout() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            authRepository.signOut().onSuccess {
-                _uiState.update { it.copy(isLoggedOut = true, isLoading = false) }
-            }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
-            }
-        }
-    }
-
     fun navigateToEdit() {
         _uiState.update { it.copy(navigateToEdit = true) }
     }
@@ -96,4 +87,6 @@ class ProfileViewModel @Inject constructor(
     fun onEditNavigated() {
         _uiState.update { it.copy(navigateToEdit = false) }
     }
+
+    // FUNGSI LOGOUT TELAH DIHAPUS
 }
