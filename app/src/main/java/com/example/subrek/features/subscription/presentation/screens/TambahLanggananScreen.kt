@@ -44,6 +44,7 @@ fun TambahLanggananScreen(
     var selectedAppForForm by remember { mutableStateOf<CatalogItem?>(null) }
 
     var showAppDialog by remember { mutableStateOf(false) }
+    var appToDelete by remember { mutableStateOf<CatalogItem?>(null) }
 
     // State Input Form Detail Berlangganan
     var priceInput by remember { mutableStateOf("") }
@@ -116,9 +117,9 @@ fun TambahLanggananScreen(
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = {
                                     if (it == SwipeToDismissBoxValue.EndToStart) {
-                                        viewModel.deleteApp(app)
-                                        true
-                                    } else false
+                                        appToDelete = app
+                                    }
+                                    false
                                 }
                             )
 
@@ -183,8 +184,9 @@ fun TambahLanggananScreen(
                         }
 
                         OutlinedTextField(
-                            value = priceInput,
+                            value = if (isFreeTrial) "0" else priceInput,
                             onValueChange = { priceInput = it },
+                            enabled = !isFreeTrial,
                             label = { Text("Biaya Berlangganan") },
                             placeholder = { Text("0", color = Color.Gray.copy(alpha = 0.5f)) },
                             leadingIcon = { Text("Rp ", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp)) },
@@ -193,8 +195,9 @@ fun TambahLanggananScreen(
                         )
 
                         OutlinedTextField(
-                            value = paymentMethod,
+                            value = if (isFreeTrial) "Free Trial" else paymentMethod,
                             onValueChange = { paymentMethod = it },
+                            enabled = !isFreeTrial,
                             label = { Text("Metode Pembayaran") },
                             placeholder = { Text("Contoh: Gopay, Bank Transfer...", color = Color.Gray.copy(alpha = 0.5f)) },
                             modifier = Modifier.fillMaxWidth()
@@ -256,14 +259,15 @@ fun TambahLanggananScreen(
 
                         Button(
                             onClick = {
-                                val cleanPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
+                                val cleanPrice = if (isFreeTrial) 0.0 else (priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                                val finalPaymentMethod = if (isFreeTrial) "Free Trial" else (paymentMethod.ifBlank { "Lainnya" })
                                 viewModel.saveNewSubscription(
                                     name = selectedAppForForm!!.name,
                                     iconUrl = selectedAppForForm!!.iconUrl,
                                     price = cleanPrice,
                                     currency = "IDR",
                                     cycle = selectedCycle.uppercase(),
-                                    paymentMethod = paymentMethod.ifBlank { "Lainnya" },
+                                    paymentMethod = finalPaymentMethod,
                                     date = startDateInput.ifBlank { LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                                     isTrial = isFreeTrial
                                 )
@@ -455,6 +459,35 @@ fun TambahLanggananScreen(
                     },
                     dismissButton = {
                         TextButton(onClick = { showAppDialog = false }) { Text("Batal") }
+                    }
+                )
+            }
+
+            // =========================================================================
+            // DIALOG KONFIRMASI HAPUS APLIKASI KATALOG
+            // =========================================================================
+            if (appToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { appToDelete = null },
+                    title = { Text("Hapus Aplikasi", fontWeight = FontWeight.Bold) },
+                    text = { Text("Apakah Anda yakin ingin menghapus '${appToDelete?.name}' dari katalog?") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                appToDelete?.let { app ->
+                                    viewModel.deleteApp(app)
+                                }
+                                appToDelete = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Hapus")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { appToDelete = null }) {
+                            Text("Batal")
+                        }
                     }
                 )
             }

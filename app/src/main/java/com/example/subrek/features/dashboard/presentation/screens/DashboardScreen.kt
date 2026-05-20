@@ -378,21 +378,28 @@ fun SubscriptionItemRow(
             val today = LocalDate.now()
             val daysDiff = ChronoUnit.DAYS.between(today, sub.nextPaymentDate)
 
-            when {
-                sub.status == SubscriptionStatus.TRIAL ->
-                    BadgeCard("Trial Berakhir", Amber500.copy(alpha = 0.15f), Amber500)
-                daysDiff < 0L ->
-                    BadgeCard("Terlewat ${kotlin.math.abs(daysDiff)} Hari", Rose500.copy(alpha = 0.15f), Rose500)
-                daysDiff == 0L ->
-                    BadgeCard("Hari Ini", Rose500.copy(alpha = 0.15f), Rose500)
-                daysDiff in 1..3 ->
-                    BadgeCard("$daysDiff Hari Lagi", Rose500.copy(alpha = 0.15f), Rose500)
-                daysDiff in 4..7 ->
-                    BadgeCard("Segera Jatuh Tempo", Amber500.copy(alpha = 0.15f), Amber500)
-                else -> {
-                    val formattedDate = sub.nextPaymentDate
-                        .format(DateTimeFormatter.ofPattern("dd MMM yy", Locale.ENGLISH))
-                    BadgeCard("Tempo: $formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (sub.status == SubscriptionStatus.TRIAL) {
+                    BadgeCard("Free Trial", Amber500.copy(alpha = 0.15f), Amber500)
+                }
+
+                when {
+                    daysDiff < 0L ->
+                        BadgeCard("Terlewat ${kotlin.math.abs(daysDiff)} Hari", Rose500.copy(alpha = 0.15f), Rose500)
+                    daysDiff == 0L ->
+                        BadgeCard("Hari Ini", Rose500.copy(alpha = 0.15f), Rose500)
+                    daysDiff in 1..3 ->
+                        BadgeCard("$daysDiff Hari Lagi", Rose500.copy(alpha = 0.15f), Rose500)
+                    daysDiff in 4..7 ->
+                        BadgeCard("Segera Jatuh Tempo", Amber500.copy(alpha = 0.15f), Amber500)
+                    else -> {
+                        val formattedDate = sub.nextPaymentDate
+                            .format(DateTimeFormatter.ofPattern("dd MMM yy", Locale.ENGLISH))
+                        BadgeCard("Tempo: $formattedDate", Emerald500.copy(alpha = 0.15f), Emerald500)
+                    }
                 }
             }
 
