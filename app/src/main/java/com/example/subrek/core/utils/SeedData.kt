@@ -10,14 +10,12 @@ object SeedData {
 
     private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val today = LocalDate.now()
-    // =========================================================
-    // 2. KATALOG APP DEFAULT
-    // =========================================================
+
     val defaultApps = listOf(
         LocalAppEntity(
             id = "app_netflix",
             name = "Netflix",
-            iconUrl = "https://img.icons8.com/color/512/netflix-desktop-app.png"
+            iconUrl = "https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/15844974/netflixlogo.0.0.1466448626.png?quality=90&strip=all&crop=1.2535702951444%2C0%2C97.492859409711%2C100&w=1080"
         ),
         LocalAppEntity(
             id = "app_spotify",
