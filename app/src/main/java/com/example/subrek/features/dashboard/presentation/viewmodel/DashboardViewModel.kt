@@ -170,7 +170,7 @@ class DashboardViewModel @Inject constructor(
         return result
     }
 
-    private fun loadDashboardData() {
+    fun loadDashboardData() {
         viewModelScope.launch {
             repository.getAllSubscriptions()
                 .onStart { _uiState.update { it.copy(isLoading = true) } }

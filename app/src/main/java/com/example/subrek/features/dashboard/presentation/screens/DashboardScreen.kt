@@ -132,7 +132,7 @@ fun DashboardScreen(
     }
 
     LaunchedEffect(Unit) {
-        profileViewModel.loadProfile()
+        viewModel.loadDashboardData() // Panggil fungsi untuk mengambil data terbaru
     }
 
     if (showSpendingBottomSheet) {

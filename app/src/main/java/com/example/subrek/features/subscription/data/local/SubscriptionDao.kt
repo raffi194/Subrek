@@ -24,6 +24,15 @@ interface SubscriptionDao {
     @Query("DELETE FROM subscriptions WHERE id = :id")
     suspend fun deleteSubscriptionById(id: String)
 
+    @Query("DELETE FROM subscriptions")
+    suspend fun deleteAllSubscriptions()
+
+    @Query("DELETE FROM local_categories")
+    suspend fun deleteAllCategories()
+
+    @Query("DELETE FROM local_apps")
+    suspend fun deleteAllApps()
+
     // FUNGSI getDirtySubscriptions() TELAH DIHAPUS
 
     @Query("""
@@ -62,9 +71,13 @@ interface SubscriptionDao {
 
     @Query("""
         UPDATE subscriptions 
-        SET price = :price, billing_cycle = :billingCycle, start_date = :startDate,
+        SET price = :price, 
+            billing_cycle = :billingCycle, 
+            start_date = :startDate,
             next_payment_date = :nextPaymentDate,
-            payment_method = :paymentMethod, is_trial = :isTrial, status = :status
+            payment_method = :paymentMethod,
+            is_trial = :isTrial,
+            status = :status
         WHERE id = :id
     """)
     suspend fun updateSubscriptionBilling(
@@ -77,7 +90,6 @@ interface SubscriptionDao {
         isTrial: Boolean,
         status: String
     )
-
     @Query("UPDATE subscriptions SET status = 'ENDED' WHERE id = :id")
     suspend fun terminateSubscription(id: String)
 
@@ -96,13 +108,4 @@ interface SubscriptionDao {
 
     @Query("DELETE FROM local_apps WHERE id = :id")
     suspend fun deleteCustomApp(id: String)
-
-    @Query("DELETE FROM local_categories")
-    suspend fun deleteAllCategories()
-
-    @Query("DELETE FROM local_apps")
-    suspend fun deleteAllApps()
-
-    @Query("DELETE FROM subscriptions")
-    suspend fun deleteAllSubscriptions()
 }

@@ -1,7 +1,5 @@
 package com.example.subrek.features.subscription.data.repository
 
-import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
 import com.example.subrek.features.subscription.data.local.LocalAppEntity
 import com.example.subrek.features.subscription.data.local.SubscriptionDao
 import com.example.subrek.features.subscription.data.mapper.toDomain
@@ -18,8 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SubscriptionRepositoryImpl @Inject constructor(
-    private val subscriptionDao: SubscriptionDao,
-    @ApplicationContext private val context: Context
+    private val subscriptionDao: SubscriptionDao
 ) : SubscriptionRepository {
 
     override fun getAllSubscriptions(): Flow<List<Subscription>> {
@@ -108,23 +105,45 @@ class SubscriptionRepositoryImpl @Inject constructor(
         isTrial: Boolean,
         status: String
     ) {
-        val existing = subscriptionDao.getSubscriptionById(id)
-        val calculatedNextPaymentDate = if (existing != null && (existing.price == 0.0 || existing.paymentMethod == "Belum Diatur")) {
-            startDate
-        } else {
-            existing?.nextPaymentDate ?: startDate
+        val parsedStartDate = try {
+            LocalDate.parse(startDate, DateTimeFormatter.ISO_LOCAL_DATE)
+        } catch (e: Exception) {
+            LocalDate.now()
         }
-        
+
+        // Hitung nextPaymentDate yang benar dari startDate + siklus
+        val today = LocalDate.now()
+        val nextPaymentDate = calculateNextPaymentDate(parsedStartDate, billingCycle, today)
+
+        android.util.Log.d("UPDATE_BILLING", "id=$id price=$price cycle=$billingCycle nextPayment=$nextPaymentDate")
+
         subscriptionDao.updateSubscriptionBilling(
             id = id,
             price = price,
             billingCycle = billingCycle,
             startDate = startDate,
-            nextPaymentDate = calculatedNextPaymentDate,
+            nextPaymentDate = nextPaymentDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
             paymentMethod = paymentMethod,
             isTrial = isTrial,
             status = status
         )
+    }
+
+    private fun calculateNextPaymentDate(
+        startDate: LocalDate,
+        billingCycle: String,
+        today: LocalDate
+    ): LocalDate {
+        var next = startDate
+        while (next.isBefore(today)) {
+            next = when (billingCycle.uppercase()) {
+                "WEEKLY"  -> next.plusWeeks(1)
+                "MONTHLY" -> next.plusMonths(1)
+                "YEARLY"  -> next.plusYears(1)
+                else      -> next.plusMonths(1)
+            }
+        }
+        return next
     }
 
     override suspend fun terminateSubscription(id: String) {
@@ -221,21 +240,8 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
-        return try {
-            val contentResolver = context.contentResolver
-            val inputStream = contentResolver.openInputStream(uri) ?: return null
-            val fileName = "app_icon_${System.currentTimeMillis()}.png"
-            val file = java.io.File(context.filesDir, fileName)
-            val outputStream = java.io.FileOutputStream(file)
-            inputStream.use { input ->
-                outputStream.use { output ->
-                    input.copyTo(output)
-                }
-            }
-            file.absolutePath
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        // Supabase Storage dihilangkan.
+        // Kini hanya mengembalikan path lokal perangkat sebagai String agar tetap bisa dimuat oleh antarmuka (UI).
+        return uri.toString()
     }
 }
