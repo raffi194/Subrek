@@ -2,10 +2,6 @@ package com.example.subrek.features.subscription.domain.model
 
 import java.time.LocalDate
 
-/**
- * Pure Kotlin Entity untuk data Langganan (Subscription).
- * Berkas ini terisolasi dari anotasi framework database (Room) maupun remote (Supabase).
- */
 data class Subscription(
     val id: String,
     val name: String,
@@ -133,7 +129,7 @@ data class Subscription(
 }
 
 enum class BillingCycle {
-    WEEKLY,  // 👈 DITAMBAHKAN
+    WEEKLY,
     MONTHLY,
     YEARLY
 }
@@ -145,5 +141,5 @@ enum class SubscriptionStatus {
     PAUSED,
     CANCELLED,
     NEEDS_REVIEW,
-    ENDED   // 👈 DITAMBAHKAN
+    ENDED
 }

@@ -10,9 +10,6 @@ object SeedData {
 
     private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
     private val today = LocalDate.now()
-    // =========================================================
-    // 2. KATALOG APP DEFAULT
-    // =========================================================
     val defaultApps = listOf(
         LocalAppEntity(
             id = "app_netflix",
@@ -58,6 +55,16 @@ object SeedData {
             id = "app_chatgpt",
             name = "ChatGPT",
             iconUrl = "https://img.icons8.com/fluency/512/chatgpt.png"
+        ),
+        LocalAppEntity(
+            id = "app_disney",
+            name = "Disney+",
+            iconUrl = "https://img.icons8.com/color/512/disney-plus.png"
+        ),
+        LocalAppEntity(
+            id = "app_hbogo",
+            name = "HBO Go",
+            iconUrl = "https://img.icons8.com/color/512/hbo.png"
         )
     )
 }
