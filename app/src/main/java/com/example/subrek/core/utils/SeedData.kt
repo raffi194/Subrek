@@ -50,6 +50,11 @@ object SeedData {
             iconUrl = "https://img.icons8.com/color/512/zoom.png"
         ),
         LocalAppEntity(
+            id = "app_claude",
+            name = "Claude",
+            iconUrl = "https://cdn-1.webcatalog.io/catalog/claude/claude-icon-filled-256.webp?v=1776040508943"
+        ),
+        LocalAppEntity(
             id = "app_chatgpt",
             name = "ChatGPT",
             iconUrl = "https://img.icons8.com/fluency/512/chatgpt.png"
