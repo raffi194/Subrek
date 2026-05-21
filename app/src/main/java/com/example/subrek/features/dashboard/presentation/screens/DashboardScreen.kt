@@ -1,6 +1,7 @@
 package com.example.subrek.features.dashboard.presentation.screens
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -20,7 +21,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -77,41 +80,52 @@ fun DashboardScreen(
                 Text(
                     text = "Analisis Pengeluaran",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Card Kumulatif (Lifetime Spending)
+                // Card Kumulatif (Lifetime Spending) - Desain Premium
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFF1F5F9))
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = "TOTAL INPUT PENGELUARAN",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Slate500,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        val formattedLifetime = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
-                            maximumFractionDigits = 0
-                        }.format(state.lifetimeSpending)
-                        Text(
-                            text = formattedLifetime,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Blue600
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Akumulasi biaya sejak mulai menggunakan aplikasi ini.",
-                            fontSize = 12.sp,
-                            color = Slate500
-                        )
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF))
+                                )
+                            )
+                            .padding(20.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "TOTAL INPUT PENGELUARAN",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Slate500,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val formattedLifetime = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                                maximumFractionDigits = 0
+                            }.format(state.lifetimeSpending)
+                            Text(
+                                text = formattedLifetime,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFF1E3A8A)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Akumulasi biaya sejak mulai menggunakan aplikasi ini.",
+                                fontSize = 12.sp,
+                                color = Slate500
+                            )
+                        }
                     }
                 }
 
@@ -155,7 +169,7 @@ fun DashboardScreen(
                                     Text(
                                         text = item.monthName,
                                         fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = Color.Black
                                     )
                                     val formattedAmount = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
@@ -164,20 +178,30 @@ fun DashboardScreen(
                                     Text(
                                         text = formattedAmount,
                                         fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.Black
+                                        fontWeight = FontWeight.Black,
+                                        color = Color(0xFF1E3A8A)
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                LinearProgressIndicator(
-                                    progress = { progress },
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Kustom Progress Bar dengan Gradient yang Elegan
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(8.dp)
-                                        .clip(RoundedCornerShape(4.dp)),
-                                    color = Blue600,
-                                    trackColor = Color(0xFFE2E8F0)
-                                )
+                                        .height(10.dp)
+                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(5.dp))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                                            .fillMaxHeight()
+                                            .background(
+                                                brush = Brush.horizontalGradient(
+                                                    colors = listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6))
+                                                ),
+                                                shape = RoundedCornerShape(5.dp)
+                                            )
+                                    )
+                                }
                             }
                         }
                     }
@@ -277,51 +301,78 @@ fun DashboardScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .clickable { showSpendingBottomSheet = true },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Text(
-                            "Total Konsumsi Bulan Ini",
-                            color = Slate500,
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            val formattedPrice = if (state.totalConsumptionThisMonth > 0) {
-                                NumberFormat
-                                    .getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
-                                        maximumFractionDigits = 0
-                                    }
-                                    .format(state.totalConsumptionThisMonth)
-                            } else {
-                                "Rp 0"
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+                                )
+                            )
+                            .padding(24.dp)
+                    ) {
+                        Column {
+                            Text(
+                                "Total Konsumsi Bulan Ini",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                letterSpacing = 0.5.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val formattedPrice = if (state.totalConsumptionThisMonth > 0) {
+                                    NumberFormat
+                                        .getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                                            maximumFractionDigits = 0
+                                        }
+                                        .format(state.totalConsumptionThisMonth)
+                                } else {
+                                    "Rp 0"
+                                }
+                                Text(
+                                    formattedPrice,
+                                    color = Color.White,
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.Black
+                                )
                             }
-                            Text(
-                                formattedPrice,
-                                color = Color.Black,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Black
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Aplikasi Aktif: ${state.activeAppsCount}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (state.activeAppsCount > 0) Blue600 else Slate500,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Lihat Riwayat →",
-                                fontSize = 12.sp,
-                                color = Blue600,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Aplikasi Aktif: ${state.activeAppsCount}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Lihat Riwayat",
+                                        fontSize = 12.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

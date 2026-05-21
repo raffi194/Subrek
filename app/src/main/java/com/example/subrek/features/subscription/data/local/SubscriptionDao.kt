@@ -62,10 +62,21 @@ interface SubscriptionDao {
 
     @Query("""
         UPDATE subscriptions 
-        SET price = :price, billing_cycle = :billingCycle, start_date = :startDate 
-        WHERE id = :id AND status = 'ACTIVE'
+        SET price = :price, billing_cycle = :billingCycle, start_date = :startDate,
+            next_payment_date = :nextPaymentDate,
+            payment_method = :paymentMethod, is_trial = :isTrial, status = :status
+        WHERE id = :id
     """)
-    suspend fun updateSubscriptionBilling(id: String, price: Double, billingCycle: String, startDate: String)
+    suspend fun updateSubscriptionBilling(
+        id: String,
+        price: Double,
+        billingCycle: String,
+        startDate: String,
+        nextPaymentDate: String,
+        paymentMethod: String,
+        isTrial: Boolean,
+        status: String
+    )
 
     @Query("UPDATE subscriptions SET status = 'ENDED' WHERE id = :id")
     suspend fun terminateSubscription(id: String)

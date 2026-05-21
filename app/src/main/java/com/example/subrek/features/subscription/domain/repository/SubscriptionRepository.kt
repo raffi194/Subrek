@@ -62,7 +62,15 @@ interface SubscriptionRepository {
 
     fun getSubscriptionByIdFlow(id: String): Flow<Subscription?>
 
-    suspend fun updateSubscriptionBilling(id: String, price: Double, billingCycle: String, startDate: String)
+    suspend fun updateSubscriptionBilling(
+        id: String,
+        price: Double,
+        billingCycle: String,
+        startDate: String,
+        paymentMethod: String,
+        isTrial: Boolean,
+        status: String
+    )
 
     suspend fun terminateSubscription(id: String)
 

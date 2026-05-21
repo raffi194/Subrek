@@ -47,10 +47,17 @@ class SubscriptionDetailViewModel @Inject constructor(
         }
     }
 
-    fun updateBillingDetails(price: Double, billingCycle: String, startDate: String) {
+    fun updateBillingDetails(
+        price: Double,
+        billingCycle: String,
+        startDate: String,
+        paymentMethod: String,
+        isTrial: Boolean
+    ) {
         viewModelScope.launch {
             try {
-                repository.updateSubscriptionBilling(subscriptionId, price, billingCycle, startDate)
+                val status = if (isTrial) "TRIAL" else "ACTIVE"
+                repository.updateSubscriptionBilling(subscriptionId, price, billingCycle, startDate, paymentMethod, isTrial, status)
                 _uiState.update { it.copy(isUpdateSuccess = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = e.localizedMessage) }

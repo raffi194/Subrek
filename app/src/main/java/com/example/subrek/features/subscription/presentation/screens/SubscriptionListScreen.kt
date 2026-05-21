@@ -1,6 +1,7 @@
 package com.example.subrek.features.subscription.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,7 +32,8 @@ import com.example.subrek.features.subscription.presentation.viewmodel.Subscript
 @Composable
 fun SubscriptionListScreen(
     viewModel: SubscriptionViewModel,
-    onNavigateToAdd: () -> Unit
+    onNavigateToAdd: () -> Unit,
+    onNavigateToDetail: (String) -> Unit
 ) {
     val state by viewModel.subscriptionsState.collectAsState()
 
@@ -79,7 +81,7 @@ fun SubscriptionListScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(subscriptions) { subscription ->
-                                SubscriptionItem(subscription)
+                                SubscriptionItem(subscription, onNavigateToDetail)
                             }
                         }
                     }
@@ -98,9 +100,14 @@ fun SubscriptionListScreen(
 }
 
 @Composable
-fun SubscriptionItem(subscription: Subscription) {
+fun SubscriptionItem(
+    subscription: Subscription,
+    onNavigateToDetail: (String) -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onNavigateToDetail(subscription.id) },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(

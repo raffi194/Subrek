@@ -1,10 +1,12 @@
 package com.example.subrek.features.subscription.presentation.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subrek.features.subscription.domain.model.BillingCycle
 import com.example.subrek.features.subscription.domain.model.Subscription
 import com.example.subrek.features.subscription.domain.model.SubscriptionStatus
+import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
 import com.example.subrek.features.subscription.domain.usecase.AddSubscriptionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,11 +26,11 @@ data class AddSubscriptionFormState(
     val price: String = "",
     val priceError: String? = null,
     val currency: String = "IDR",
-    // 🛠️ DIUBAH: Inisialisasi properti category di dalam Form State telah dihapus
     val paymentMethod: String = "Kartu Kredit",
     val billingCycle: BillingCycle = BillingCycle.MONTHLY,
     val firstPaymentDate: LocalDate = LocalDate.now(),
     val isTrial: Boolean = false,
+    val imageUri: Uri? = null,
     val isLoading: Boolean = false
 )
 
@@ -39,7 +41,8 @@ sealed class AddSubscriptionUiEvent {
 
 @HiltViewModel
 class AddSubscriptionViewModel @Inject constructor(
-    private val addSubscriptionUseCase: AddSubscriptionUseCase
+    private val addSubscriptionUseCase: AddSubscriptionUseCase,
+    private val repository: SubscriptionRepository
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(AddSubscriptionFormState())
@@ -57,6 +60,10 @@ class AddSubscriptionViewModel @Inject constructor(
         _formState.value = _formState.value.copy(name = newName, nameError = error)
     }
 
+    fun onImageUriChange(uri: Uri?) {
+        _formState.value = _formState.value.copy(imageUri = uri)
+    }
+
     fun onPriceChange(newPrice: String) {
         val cleanedPrice = newPrice.replace(",", "").replace(".", "")
         val priceValue = cleanedPrice.toDoubleOrNull()
@@ -72,7 +79,6 @@ class AddSubscriptionViewModel @Inject constructor(
         _formState.value = _formState.value.copy(currency = newCurrency)
     }
 
-    // 🛠️ DIUBAH: Fungsi onCategoryChange dikosongkan karena UI kategori dibersihkan
     fun onCategoryChange(newCategory: String) { }
 
     fun onPaymentMethodChange(newMethod: String) {
@@ -92,32 +98,39 @@ class AddSubscriptionViewModel @Inject constructor(
     }
 
     fun saveSubscription() {
-        // Trigger validasi akhir sebelum menyimpan
         onNameChange(_formState.value.name)
-        onPriceChange(_formState.value.price)
 
         val currentState = _formState.value
-        if (currentState.nameError != null || currentState.priceError != null || currentState.name.isBlank() || currentState.price.isBlank()) {
+        if (currentState.nameError != null || currentState.name.isBlank()) {
             return
         }
 
         viewModelScope.launch {
             _formState.value = currentState.copy(isLoading = true)
             try {
+                var remoteIconUrl: String? = null
+                currentState.imageUri?.let { uri ->
+                    try {
+                        remoteIconUrl = repository.uploadAppIconStorage(uri)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
                 val newSub = Subscription(
                     id = UUID.randomUUID().toString(),
                     name = currentState.name,
-                    price = currentState.price.toDouble(),
-                    currency = currentState.currency,
-                    billingCycle = currentState.billingCycle,
-                    startDate = currentState.firstPaymentDate,
-                    nextPaymentDate = currentState.firstPaymentDate, // Inisialisasi awal pembayaran
-                    // 🛠️ DIUBAH: Pemasukan nilai parameter category ke domain model Subscription di sini telah dihapus
-                    paymentMethod = currentState.paymentMethod,
-                    isTrial = currentState.isTrial,
-                    status = if (currentState.isTrial) SubscriptionStatus.TRIAL else SubscriptionStatus.ACTIVE,
+                    price = 0.0,
+                    currency = "IDR",
+                    billingCycle = BillingCycle.MONTHLY,
+                    startDate = LocalDate.now(),
+                    nextPaymentDate = LocalDate.now(),
+                    paymentMethod = "Belum Diatur",
+                    isTrial = false,
+                    status = SubscriptionStatus.ACTIVE,
                     createdAt = LocalDate.now(),
-                    updatedAt = LocalDate.now()
+                    updatedAt = LocalDate.now(),
+                    iconUrl = remoteIconUrl
                 )
                 
                 addSubscriptionUseCase(newSub)

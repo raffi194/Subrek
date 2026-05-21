@@ -1,5 +1,7 @@
 package com.example.subrek.features.subscription.presentation.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -31,10 +35,14 @@ fun SubscriptionDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
+    val context = LocalContext.current
+
     // State form internal
     var priceInput by remember { mutableStateOf("") }
     var selectedCycle by remember { mutableStateOf("MONTHLY") }
     var startDateInput by remember { mutableStateOf("") }
+    var paymentMethodInput by remember { mutableStateOf("") }
+    var isFreeTrial by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     // Sinkronisasi data awal saat entitas berhasil dimuat dari DB
@@ -43,6 +51,8 @@ fun SubscriptionDetailScreen(
             priceInput = it.price.toInt().toString()
             selectedCycle = it.billingCycle.name
             startDateInput = it.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+            paymentMethodInput = it.paymentMethod
+            isFreeTrial = it.isTrial
         }
     }
 
@@ -130,13 +140,25 @@ fun SubscriptionDetailScreen(
                 OutlinedTextField(
                     value = priceInput,
                     onValueChange = { priceInput = it },
-                    label = { Text("Total Biaya (Rp)") },
+                    label = { Text("Total Biaya") },
+                    placeholder = { Text("0", color = Color.Gray.copy(alpha = 0.5f)) },
+                    leadingIcon = { Text("Rp ", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
 
-                // Field 3: Periode Subscriptions / Billing Cycle (Editable Dropdown)
+                // Field 3: Metode Pembayaran (Editable)
+                OutlinedTextField(
+                    value = paymentMethodInput,
+                    onValueChange = { paymentMethodInput = it },
+                    label = { Text("Metode Pembayaran") },
+                    placeholder = { Text("Contoh: Gopay, Bank Transfer...", color = Color.Gray.copy(alpha = 0.5f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Field 4: Periode Subscriptions / Billing Cycle (Editable Dropdown)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
                         expanded = isDropdownExpanded,
@@ -167,14 +189,55 @@ fun SubscriptionDetailScreen(
                     }
                 }
 
-                // Field 4: Tanggal Mulai Penagihan (Editable)
+                // Field 5: Tanggal Mulai Penagihan (Editable with DatePicker)
+                val calendar = java.util.Calendar.getInstance()
+                val datePickerDialog = android.app.DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        val selectedDate = java.time.LocalDate.of(year, month + 1, dayOfMonth)
+                        startDateInput = selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    },
+                    calendar.get(java.util.Calendar.YEAR),
+                    calendar.get(java.util.Calendar.MONTH),
+                    calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                )
+
+                val interactionSource = remember { MutableInteractionSource() }
                 OutlinedTextField(
                     value = startDateInput,
-                    onValueChange = { startDateInput = it },
-                    label = { Text("Tanggal Mulai Penagihan (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Tanggal Mulai Penagihan") },
+                    placeholder = { Text("Pilih Tanggal", color = Color.Gray.copy(alpha = 0.5f)) },
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(imageVector = Icons.Default.DateRange, contentDescription = "Pilih Tanggal")
+                        }
+                    },
+                    interactionSource = interactionSource,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = { datePickerDialog.show() }
+                        )
                 )
+
+                // Field 6: Layanan Free Trial (Switch Toggle)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Layanan Free Trial", fontWeight = FontWeight.Medium)
+                    Switch(
+                        checked = isFreeTrial,
+                        onCheckedChange = { isFreeTrial = it }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -182,8 +245,14 @@ fun SubscriptionDetailScreen(
                 // Button Aksi Simpan Perubahan Detail
                 Button(
                     onClick = {
-                        val finalPrice = priceInput.toDoubleOrNull() ?: 0.0
-                        viewModel.updateBillingDetails(finalPrice, selectedCycle, startDateInput)
+                        val finalPrice = priceInput.replace(",", ".").toDoubleOrNull() ?: 0.0
+                        viewModel.updateBillingDetails(
+                            price = finalPrice,
+                            billingCycle = selectedCycle,
+                            startDate = startDateInput,
+                            paymentMethod = paymentMethodInput,
+                            isTrial = isFreeTrial
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)

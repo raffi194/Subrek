@@ -104,6 +104,13 @@ class DashboardViewModel @Inject constructor(
         var total = 0.0
 
         fun getSpendingForSub(sub: Subscription): Double {
+            // Jangan hitung jika target month sebelum bulan dibuatnya subscription ini
+            val targetMonthStart = targetMonthDate.withDayOfMonth(1)
+            val createdMonthStart = sub.createdAt.withDayOfMonth(1)
+            if (targetMonthStart.isBefore(createdMonthStart)) {
+                return 0.0
+            }
+
             val paymentDates = getPaymentDatesInMonth(sub, targetMonthDate)
             var subTotal = 0.0
             for (date in paymentDates) {
@@ -142,63 +149,21 @@ class DashboardViewModel @Inject constructor(
         val allSubs = activeSubs + endedSubs
         if (allSubs.isEmpty()) return emptyList()
 
-        val earliestDate = allSubs.minOf { it.startDate }
-        val today = LocalDate.now()
+        // Ambil semua bulan unik dari tanggal di-inputnya subscription (createdAt)
+        val inputMonths = allSubs.map { it.createdAt.withDayOfMonth(1) }.toSet()
+        val sortedMonths = inputMonths.sorted()
+
         val monthNameFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("id-ID"))
-
         val result = mutableListOf<MonthlySpend>()
-        var current = earliestDate.withDayOfMonth(1)
-        val endLimit = today.withDayOfMonth(1)
 
-        while (!current.isAfter(endLimit)) {
-            val totalForMonth = calculateTotalSpendForMonth(activeSubs, endedSubs, current)
+        for (monthDate in sortedMonths) {
+            val totalForMonth = calculateTotalSpendForMonth(activeSubs, endedSubs, monthDate)
             if (totalForMonth > 0.0) {
-                result.add(MonthlySpend(current.format(monthNameFormatter), totalForMonth))
+                result.add(MonthlySpend(monthDate.format(monthNameFormatter), totalForMonth))
             }
-            current = current.plusMonths(1)
         }
 
         return result
-    }
-
-    private fun calculateLifetimeSpending(
-        activeSubs: List<Subscription>,
-        endedSubs: List<Subscription>
-    ): Double {
-        val today = LocalDate.now()
-        var total = 0.0
-
-        fun getLifetimeForSub(sub: Subscription): Double {
-            val start = sub.startDate
-            val end = if (sub.status.name == "ENDED") sub.nextPaymentDate else today
-
-            if (end.isBefore(start)) return 0.0
-
-            return when (sub.billingCycle.name) {
-                "MONTHLY" -> {
-                    val months = ChronoUnit.MONTHS.between(start.withDayOfMonth(1), end.withDayOfMonth(1)) + 1
-                    sub.price * months.coerceAtLeast(1)
-                }
-                "WEEKLY" -> {
-                    val weeks = ChronoUnit.WEEKS.between(start, end) + 1
-                    sub.price * weeks.coerceAtLeast(1)
-                }
-                "YEARLY" -> {
-                    val years = ChronoUnit.YEARS.between(start, end) + 1
-                    sub.price * years.coerceAtLeast(1)
-                }
-                else -> 0.0
-            }
-        }
-
-        for (sub in activeSubs) {
-            total += getLifetimeForSub(sub)
-        }
-        for (sub in endedSubs) {
-            total += getLifetimeForSub(sub)
-        }
-
-        return total
     }
 
     private fun loadDashboardData() {
@@ -224,7 +189,7 @@ class DashboardViewModel @Inject constructor(
 
                     // Hitung data riwayat dan lifetime spending
                     val monthlyHistory = calculatePastMonthsSpending(activeSubs, endedSubs)
-                    val lifetimeSpend = calculateLifetimeSpending(activeSubs, endedSubs)
+                    val lifetimeSpend = monthlyHistory.sumOf { it.amount }
 
                     _uiState.update { it.copy(
                         rawSubscriptions = subs,
@@ -247,7 +212,7 @@ class DashboardViewModel @Inject constructor(
                     val currentSubs = _uiState.value.rawSubscriptions
                     val activeSubs = currentSubs.filter { it.status.name == "ACTIVE" || it.status.name == "TRIAL" }
                     val monthlyHistory = calculatePastMonthsSpending(activeSubs, history)
-                    val lifetimeSpend = calculateLifetimeSpending(activeSubs, history)
+                    val lifetimeSpend = monthlyHistory.sumOf { it.amount }
                     
                     _uiState.update { it.copy(
                         lifetimeSpending = lifetimeSpend,

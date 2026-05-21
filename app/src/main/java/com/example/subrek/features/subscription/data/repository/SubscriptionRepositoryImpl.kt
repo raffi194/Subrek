@@ -103,10 +103,28 @@ class SubscriptionRepositoryImpl @Inject constructor(
         id: String,
         price: Double,
         billingCycle: String,
-        startDate: String
+        startDate: String,
+        paymentMethod: String,
+        isTrial: Boolean,
+        status: String
     ) {
-        // Logika update ke Supabase dihapus total
-        subscriptionDao.updateSubscriptionBilling(id, price, billingCycle, startDate)
+        val existing = subscriptionDao.getSubscriptionById(id)
+        val calculatedNextPaymentDate = if (existing != null && (existing.price == 0.0 || existing.paymentMethod == "Belum Diatur")) {
+            startDate
+        } else {
+            existing?.nextPaymentDate ?: startDate
+        }
+        
+        subscriptionDao.updateSubscriptionBilling(
+            id = id,
+            price = price,
+            billingCycle = billingCycle,
+            startDate = startDate,
+            nextPaymentDate = calculatedNextPaymentDate,
+            paymentMethod = paymentMethod,
+            isTrial = isTrial,
+            status = status
+        )
     }
 
     override suspend fun terminateSubscription(id: String) {
