@@ -25,7 +25,8 @@ fun SubscriptionEntity.toDomain(): Subscription {
         unconfirmedCyclesCount = unconfirmedCyclesCount,
         createdAt = LocalDate.parse(createdAt, dateFormatter),
         updatedAt = LocalDate.now(),
-        iconUrl = iconUrl
+        iconUrl = iconUrl,
+        confirmedPaymentDates = confirmedPaymentDates
     )
 }
 
@@ -45,6 +46,7 @@ fun Subscription.toEntity(): SubscriptionEntity {
         unconfirmedCyclesCount = unconfirmedCyclesCount,
         createdAt = createdAt.format(dateFormatter),
         updatedAt = System.currentTimeMillis(),
-        iconUrl = iconUrl
+        iconUrl = iconUrl,
+        confirmedPaymentDates = confirmedPaymentDates
     )
 }

@@ -19,25 +19,26 @@ class DatabaseSeeder @Inject constructor(
     }
 
     fun seedIfNeeded() {
-        val alreadySeeded = sharedPreferences.getBoolean(KEY_SEED_DONE, false)
-        if (alreadySeeded) return
-
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Clear old database data for clean re-seeding
-                subscriptionDao.deleteAllCategories()
-                subscriptionDao.deleteAllApps()
-                subscriptionDao.deleteAllSubscriptions()
+                val existingApps = subscriptionDao.getCustomApps().first()
+                val alreadySeeded = sharedPreferences.getBoolean(KEY_SEED_DONE, false)
+                
+                if (existingApps.isEmpty() || !alreadySeeded) {
+                    // Clear old database data for clean re-seeding
+                    subscriptionDao.deleteAllCategories()
+                    subscriptionDao.deleteAllApps()
+                    subscriptionDao.deleteAllSubscriptions()
 
-                // Seed katalog app default
-                SeedData.defaultApps.forEach { app ->
-                    subscriptionDao.insertCustomApp(app)
+                    // Seed katalog app default
+                    SeedData.defaultApps.forEach { app ->
+                        subscriptionDao.insertCustomApp(app)
+                    }
+
+                    sharedPreferences.edit()
+                        .putBoolean(KEY_SEED_DONE, true)
+                        .apply()
                 }
-
-                sharedPreferences.edit()
-                    .putBoolean(KEY_SEED_DONE, true)
-                    .apply()
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }

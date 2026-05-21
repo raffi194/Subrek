@@ -41,8 +41,10 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.roundToInt
-import com.example.subrek.core.background.NotificationWorker // Pastikan import class ini
+import com.example.subrek.core.background.NotificationWorker
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.DialogProperties
 import androidx.work.WorkManager
 import androidx.work.OneTimeWorkRequestBuilder
 
@@ -58,6 +60,76 @@ fun DashboardScreen(
     val profileState by profileViewModel.uiState.collectAsState()
     val context = LocalContext.current // Tambahkan ini
     var showSpendingBottomSheet by remember { mutableStateOf(false) }
+    var subscriptionToConfirmPaid by remember { mutableStateOf<Subscription?>(null) }
+
+    if (subscriptionToConfirmPaid != null) {
+        val sub = subscriptionToConfirmPaid!!
+        val unconfirmedDates = sub.getUnconfirmedPaymentDates()
+        if (unconfirmedDates.size > 1) {
+            val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("id-ID"))
+            val oldestMonth = unconfirmedDates.first().format(monthFormatter)
+            val currentMonth = unconfirmedDates.last().format(monthFormatter)
+
+            AlertDialog(
+                onDismissRequest = { subscriptionToConfirmPaid = null },
+                title = {
+                    Text(
+                        text = "Konfirmasi Pembayaran",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Terdapat ${unconfirmedDates.size} tagihan terlewat untuk ${sub.name}.\n\nPilih tindakan pembayaran Anda:",
+                        fontSize = 14.sp,
+                        color = Color(0xFF475569)
+                    )
+                },
+                confirmButton = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                viewModel.markAsPaid(sub)
+                                subscriptionToConfirmPaid = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Bayar Bulan Terlama ($oldestMonth)", color = Color.White)
+                        }
+                        
+                        Button(
+                            onClick = {
+                                viewModel.skipAndConfirmCurrent(sub)
+                                subscriptionToConfirmPaid = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Lompati & Bayar Bulan Ini ($currentMonth)", color = Color.White)
+                        }
+
+                        TextButton(
+                            onClick = { subscriptionToConfirmPaid = null },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Batal", color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                        }
+                    }
+                },
+                dismissButton = null,
+                containerColor = Color.White,
+                properties = DialogProperties(usePlatformDefaultWidth = true)
+            )
+        }
+    }
 
     LaunchedEffect(Unit) {
         profileViewModel.loadProfile()
@@ -196,7 +268,7 @@ fun DashboardScreen(
                                             .fillMaxHeight()
                                             .background(
                                                 brush = Brush.horizontalGradient(
-                                                    colors = listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6))
+                                                    colors = listOf(PrimaryRed, PrimaryOrange)
                                                 ),
                                                 shape = RoundedCornerShape(5.dp)
                                             )
@@ -233,7 +305,7 @@ fun DashboardScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(Blue600, CircleShape),
+                                        .background(PrimaryRed, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -308,9 +380,9 @@ fun DashboardScreen(
                         modifier = Modifier
                             .background(
                                 brush = Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+                                    colors = listOf(PrimaryRed, PrimaryOrange)
                                 )
-                            )
+                             )
                             .padding(24.dp)
                     ) {
                         Column {
@@ -414,7 +486,14 @@ fun DashboardScreen(
                             subscription = item,
                             onDelete = { viewModel.deleteSubscription(item.id) },
                             onClick = { onNavigateToDetail(item.id) },
-                            onMarkPaid = { viewModel.markAsPaid(item) },
+                            onMarkPaid = {
+                                val unconfirmed = item.getUnconfirmedPaymentDates()
+                                if (unconfirmed.size > 1) {
+                                    subscriptionToConfirmPaid = item
+                                } else {
+                                    viewModel.markAsPaid(item)
+                                }
+                            },
                             showTrialTag = true
                         )
                     }
@@ -454,7 +533,14 @@ fun DashboardScreen(
                             subscription = item,
                             onDelete = { viewModel.deleteSubscription(item.id) },
                             onClick = { onNavigateToDetail(item.id) },
-                            onMarkPaid = { viewModel.markAsPaid(item) },
+                            onMarkPaid = {
+                                val unconfirmed = item.getUnconfirmedPaymentDates()
+                                if (unconfirmed.size > 1) {
+                                    subscriptionToConfirmPaid = item
+                                } else {
+                                    viewModel.markAsPaid(item)
+                                }
+                            },
                             showTrialTag = false
                         )
                     }
@@ -667,7 +753,7 @@ fun SubscriptionItemRow(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onMarkPaid,
-                    colors = ButtonDefaults.buttonColors(containerColor = Blue600),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.height(30.dp)

@@ -81,7 +81,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
                     onClick = { viewModel.toggleTrendType(false) },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (!state.isYearlyTrend) Blue600 else androidx.compose.ui.graphics.Color.Transparent,
+                        containerColor = if (!state.isYearlyTrend) PrimaryRed else androidx.compose.ui.graphics.Color.Transparent,
                         contentColor = Slate50
                     ),
                     shape = RoundedCornerShape(6.dp)
@@ -90,7 +90,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
                     onClick = { viewModel.toggleTrendType(true) },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.isYearlyTrend) Blue600 else androidx.compose.ui.graphics.Color.Transparent,
+                        containerColor = if (state.isYearlyTrend) PrimaryRed else androidx.compose.ui.graphics.Color.Transparent,
                         contentColor = Slate50
                     ),
                     shape = RoundedCornerShape(6.dp)
@@ -132,11 +132,11 @@ fun ReportScreen(viewModel: ReportViewModel) {
                                         if (idx == 0) path.moveTo(x, y) else path.lineTo(x, y)
                                         
                                         // Gambar titik koordinat lingkaran kecil disetiap sumbu simpul
-                                        drawCircle(color = Blue500, radius = 8f, center = Offset(x, y))
+                                        drawCircle(color = PrimaryOrange, radius = 8f, center = Offset(x, y))
                                     }
                                     
                                     // Gambar Garis Aliran Utama Tren Grafik
-                                    drawPath(path = path, color = Blue600, style = Stroke(width = 6f))
+                                    drawPath(path = path, color = PrimaryRed, style = Stroke(width = 6f))
                                 }
                             }
 

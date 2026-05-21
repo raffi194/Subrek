@@ -22,7 +22,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.subrek.core.theme.Blue600
+import com.example.subrek.core.theme.PrimaryRed
 import com.example.subrek.core.theme.Slate950
 import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.subscription.domain.model.Subscription
@@ -47,7 +47,7 @@ fun SubscriptionListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = Blue600,
+                containerColor = PrimaryRed,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Langganan")
@@ -139,7 +139,7 @@ fun SubscriptionItem(
                         text = formattedPrice,
                         fontWeight = FontWeight.Normal,
                         fontSize = 14.sp,
-                        color = Blue600
+                        color = PrimaryRed
                     )
                 }
             }

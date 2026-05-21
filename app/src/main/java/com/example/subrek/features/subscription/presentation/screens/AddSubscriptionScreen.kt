@@ -144,7 +144,7 @@ fun AddSubscriptionScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Blue600)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed)
             ) {
                 if (formState.isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))

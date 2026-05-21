@@ -39,8 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.subrek.core.theme.Blue500
-import com.example.subrek.core.theme.Blue600
+import com.example.subrek.core.theme.PrimaryRed
 import com.example.subrek.core.theme.Slate400
 import com.example.subrek.core.theme.Slate900
 import com.example.subrek.core.theme.Slate950
@@ -186,7 +185,7 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .padding(4.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) Blue500 else Slate900)
+                            .background(if (isSelected) PrimaryRed else Slate900)
                             .size(if (isSelected) 24.dp else 8.dp, 8.dp)
                     )
                 }
@@ -214,7 +213,7 @@ fun OnboardingScreen(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Blue600)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed)
             ) {
                 Text(
                     text = if (pagerState.currentPage == pages.size - 1) "Mulai Sekarang" else "Lanjutkan",

@@ -55,6 +55,16 @@ fun TambahLanggananScreen(
     var isFreeTrial by remember { mutableStateOf(false) }
     var isCycleDropdownExpanded by remember { mutableStateOf(false) }
 
+    // Reset form states when user changes selected app
+    LaunchedEffect(selectedAppForForm) {
+        priceInput = ""
+        paymentMethod = ""
+        selectedCycle = "Monthly"
+        startDateInput = ""
+        isFreeTrial = false
+        isCycleDropdownExpanded = false
+    }
+
     val calendar = Calendar.getInstance()
     val mainDatePickerDialog = DatePickerDialog(
         context,

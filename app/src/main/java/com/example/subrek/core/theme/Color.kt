@@ -17,3 +17,6 @@ val Emerald500 = Color(0xFF10B981)
 val Rose500 = Color(0xFFF43F5E)
 val Amber500 = Color(0xFFF59E0B)
 val Indigo500 = Color(0xFF6366F1)
+ 
+val PrimaryRed = Color(0xFFFB4A4A)
+val PrimaryOrange = Color(0xFFF0945B)

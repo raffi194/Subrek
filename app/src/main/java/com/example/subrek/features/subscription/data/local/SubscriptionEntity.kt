@@ -50,5 +50,8 @@ data class SubscriptionEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 
     @ColumnInfo(name = "icon_url")
-    val iconUrl: String? = null
+    val iconUrl: String? = null,
+ 
+    @ColumnInfo(name = "confirmed_payment_dates")
+    val confirmedPaymentDates: String = ""
 )

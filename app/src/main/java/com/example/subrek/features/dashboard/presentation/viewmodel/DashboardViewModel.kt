@@ -114,19 +114,23 @@ class DashboardViewModel @Inject constructor(
             val paymentDates = getPaymentDatesInMonth(sub, targetMonthDate)
             var subTotal = 0.0
             for (date in paymentDates) {
-                // Jika tanggal pembayaran di masa lalu, harus sudah dikonfirmasi (nextPaymentDate > date)
-                // Jika tanggal pembayaran di hari ini atau masa depan, langsung dihitung (belum terlewat/overdue)
-                val isConfirmedOrNotOverdue = (sub.nextPaymentDate > date) || (date >= today)
-
-                // Jika statusnya ENDED, pastikan tanggal pembayaran tidak melebihi tanggal dinonaktifkan
+                // Untuk status ENDED, pastikan tanggal pembayaran tidak melebihi tanggal dinonaktifkan
                 val isWithinActivePeriod = if (sub.status.name == "ENDED") {
                     !date.isAfter(sub.nextPaymentDate)
                 } else {
                     true
                 }
 
-                if (isConfirmedOrNotOverdue && isWithinActivePeriod) {
-                    subTotal += sub.price
+                if (isWithinActivePeriod) {
+                    val dateStr = date.toString()
+                    val isConfirmed = sub.confirmedPaymentDates.split(",").contains(dateStr)
+
+                    if (isConfirmed) {
+                        subTotal += when (sub.billingCycle.name) {
+                            "YEARLY" -> sub.price / 12.0
+                            else -> sub.price
+                        }
+                    }
                 }
             }
             return subTotal
@@ -235,15 +239,16 @@ class DashboardViewModel @Inject constructor(
 
     fun markAsPaid(subscription: Subscription) {
         viewModelScope.launch {
-            val updatedSub = subscription.copy(
-                nextPaymentDate = when (subscription.billingCycle.name) {
-                    "WEEKLY" -> subscription.nextPaymentDate.plusWeeks(1)
-                    "MONTHLY" -> subscription.nextPaymentDate.plusMonths(1)
-                    "YEARLY" -> subscription.nextPaymentDate.plusYears(1)
-                    else -> subscription.nextPaymentDate.plusMonths(1)
-                },
-                updatedAt = LocalDate.now()
-            )
+            val unconfirmed = subscription.getUnconfirmedPaymentDates()
+            val dateToConfirm = unconfirmed.firstOrNull() ?: subscription.nextPaymentDate
+            val updatedSub = subscription.confirmPaymentDate(dateToConfirm)
+            repository.insertSubscription(updatedSub)
+        }
+    }
+
+    fun skipAndConfirmCurrent(subscription: Subscription) {
+        viewModelScope.launch {
+            val updatedSub = subscription.skipOverdueAndConfirmCurrent()
             repository.insertSubscription(updatedSub)
         }
     }
