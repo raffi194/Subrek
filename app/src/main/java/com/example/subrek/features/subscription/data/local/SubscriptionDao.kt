@@ -33,8 +33,6 @@ interface SubscriptionDao {
     @Query("DELETE FROM local_apps")
     suspend fun deleteAllApps()
 
-    // FUNGSI getDirtySubscriptions() TELAH DIHAPUS
-
     @Query("""
         SELECT COALESCE(AVG(
             CASE 
@@ -93,7 +91,6 @@ interface SubscriptionDao {
     @Query("UPDATE subscriptions SET status = 'ENDED' WHERE id = :id")
     suspend fun terminateSubscription(id: String)
 
-    // --- Tambahan Step 5.4 ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: LocalCategoryEntity)
 

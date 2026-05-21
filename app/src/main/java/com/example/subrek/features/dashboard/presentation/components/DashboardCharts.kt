@@ -20,12 +20,10 @@ import androidx.compose.ui.unit.sp
 import com.example.subrek.core.theme.*
 import com.example.subrek.features.subscription.domain.model.Subscription
 
-// Palet warna statis fungsional untuk grafik (Inspirasi Tailwind)
 val ChartColors = listOf(Blue500, Amber500, Rose500, Emerald500, Indigo500)
 
 @Composable
 fun DonutChartCategories(subscriptions: List<Subscription>) {
-    // 🛠️ DIUBAH: Mengganti agregasi pengeluaran berdasarkan Billing Cycle karena kategori dihapus
     val cycleSpends = subscriptions.groupBy { it.billingCycle.name }.mapValues { entry ->
         entry.value.sumOf { sub ->
             when (sub.billingCycle.name) {
@@ -45,7 +43,6 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Lingkaran Canvas Donut (Kiri)
         Box(
             modifier = Modifier.size(110.dp),
             contentAlignment = Alignment.Center
@@ -74,7 +71,6 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
 
         Spacer(modifier = Modifier.width(24.dp))
 
-        // Legenda Indikator (Kanan)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -115,7 +111,6 @@ fun DonutChartCategories(subscriptions: List<Subscription>) {
 
 @Composable
 fun HorizontalBarChartMethods(subscriptions: List<Subscription>) {
-    // Kelompokkan jumlah penggunaan berdasarkan Metode Pembayaran
     val methodCounts = subscriptions.groupBy { it.paymentMethod }.mapValues { it.value.size }
     val totalCount = methodCounts.values.sum().toFloat()
 
@@ -146,20 +141,17 @@ fun HorizontalBarChartMethods(subscriptions: List<Subscription>) {
                 }
                 
                 Spacer(modifier = Modifier.height(6.dp))
-                
-                // Representasi Batang Horizontal Menggunakan Canvas Tingkat Rendah
+
                 Canvas(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
                 ) {
-                    // Latar Belakang Track Bar (Slate950)
                     drawRoundRect(
                         color = Slate950,
                         size = size,
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f)
                     )
-                    // Isi Isi Progress Batang Aktual (Sesuai Proporsi)
                     drawRoundRect(
                         color = ChartColors.getOrElse(index) { Blue500 },
                         size = size.copy(width = size.width * ratio),

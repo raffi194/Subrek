@@ -30,8 +30,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertSubscription(subscription: Subscription) {
-        // Karena sudah offline-only, hapus argumen (isDirty = true) pada fungsi toEntity().
-        // Pastikan Anda juga sudah menghapus parameter isDirty di dalam berkas SubscriptionMapper.kt
         subscriptionDao.insertSubscription(subscription.toEntity())
     }
 
@@ -39,10 +37,8 @@ class SubscriptionRepositoryImpl @Inject constructor(
         subscriptionDao.deleteSubscriptionById(id)
     }
 
-    // CATATAN: Jika interface SubscriptionRepository.kt masih mewajibkan fungsi 'syncWithRemote()',
-    // hapus fungsi tersebut dari interface. Atau Anda bisa membiarkan implementasi kosong ini:
     override suspend fun syncWithRemote(): Result<Unit> {
-        return Result.success(Unit) // Tidak melakukan apapun di mode offline
+        return Result.success(Unit)
     }
 
     override suspend fun getSubscriptionsExpiringInDays(days: Int): List<Subscription> {
@@ -87,8 +83,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteSubscriptionFromLocalAndRemote(id: String) {
-        // Meskipun nama fungsinya masih mengandung "AndRemote" (untuk menyesuaikan Interface),
-        // fungsinya kini hanya menghapus dari Room lokal.
         subscriptionDao.deleteSubscriptionById(id)
     }
 
@@ -111,7 +105,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
             LocalDate.now()
         }
 
-        // Hitung nextPaymentDate yang benar dari startDate + siklus
         val today = LocalDate.now()
         val nextPaymentDate = calculateNextPaymentDate(parsedStartDate, billingCycle, today)
 
@@ -147,18 +140,15 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun terminateSubscription(id: String) {
-        // Logika update status ENDED ke Supabase dihapus total
         subscriptionDao.terminateSubscription(id)
     }
 
     override suspend fun insertCustomApp(app: LocalAppEntity) {
-        // Logika upsert ke Supabase dihapus total
         subscriptionDao.insertCustomApp(app)
     }
 
     override fun getCatalogItemsFlow(): Flow<List<com.example.subrek.features.subscription.domain.model.CatalogItem>> {
         return subscriptionDao.getCustomApps().map { localApps ->
-            // 1. Ambil data aplikasi default dari SeedData dan map ke model Domain
             val defaultCatalog = com.example.subrek.core.utils.SeedData.defaultApps.map { localApp ->
                 com.example.subrek.features.subscription.domain.model.CatalogItem(
                     id = localApp.id,
@@ -168,7 +158,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
                 )
             }
 
-            // 2. Ambil data kustom dari DB (hanya yang user created untuk menghindari duplikasi jika sudah di-seed)
             val customCatalog = localApps.filter { !it.id.startsWith("app_") }.map { app ->
                 com.example.subrek.features.subscription.domain.model.CatalogItem(
                     id = app.id,
@@ -178,7 +167,6 @@ class SubscriptionRepositoryImpl @Inject constructor(
                 )
             }
 
-            // 3. Gabungkan keduanya untuk dikirim langsung ke UI secara reaktif
             defaultCatalog + customCatalog
         }
     }
@@ -220,16 +208,12 @@ class SubscriptionRepositoryImpl @Inject constructor(
         status: String,
         iconUrl: String?
     ) {
-        // Variabel autentikasi session Supabase dihapus total
-
-        // 🛠️ SAFE PARSING TANGGAL
         val parsedDate = try {
             LocalDate.parse(nextPaymentDate, DateTimeFormatter.ISO_LOCAL_DATE)
         } catch (e: Exception) {
             LocalDate.now()
         }
 
-        // 🛠️ SAFE ENUM CONVERSION
         val domainCycle = try {
             com.example.subrek.features.subscription.domain.model.BillingCycle.valueOf(billingCycle.uppercase())
         } catch (e: Exception) {
@@ -258,13 +242,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
             iconUrl = iconUrl
         )
 
-        // Menyimpan data murni ke Database Lokal
         insertSubscription(subscription)
     }
 
     override suspend fun uploadAppIconStorage(uri: android.net.Uri): String? {
-        // Supabase Storage dihilangkan.
-        // Kini hanya mengembalikan path lokal perangkat sebagai String agar tetap bisa dimuat oleh antarmuka (UI).
         return uri.toString()
     }
 }

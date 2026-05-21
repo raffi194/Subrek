@@ -119,7 +119,6 @@ class DashboardViewModel @Inject constructor(
             val paymentDates = getPaymentDatesInMonth(sub, targetMonthDate)
             var subTotal = 0.0
             for (date in paymentDates) {
-                // Untuk langganan yang sudah berhenti (ENDED), hanya hitung sampai tanggal berhentinya
                 val isWithinActivePeriod = if (sub.status.name == "ENDED") {
                     !date.isAfter(sub.nextPaymentDate)
                 } else {
@@ -149,7 +148,6 @@ class DashboardViewModel @Inject constructor(
         val allSubs = activeSubs + endedSubs
         if (allSubs.isEmpty()) return emptyList()
 
-        // Ambil semua bulan unik dari daftar tanggal pembayaran yang sudah dikonfirmasi
         val confirmedMonths = allSubs.flatMap { sub ->
             sub.confirmedPaymentDates.split(",")
                 .filter { it.isNotBlank() }
@@ -181,7 +179,6 @@ class DashboardViewModel @Inject constructor(
                 .collect { subs ->
                     val stats = getDashboardStatsUseCase(subs)
 
-                    // Debug Log sesuai permintaan
                     subs.forEach { sub ->
                         android.util.Log.d("DASH_SUBS", "name=${sub.name} price=${sub.price} cycle=${sub.billingCycle} nextPayment=${sub.nextPaymentDate}")
                     }
@@ -192,11 +189,9 @@ class DashboardViewModel @Inject constructor(
                         emptyList()
                     }
 
-                    // 1. Perhitungan Total Konsumsi Bulan Ini (Estimasi dari subscriptions aktif)
                     val activeSubs = subs.filter { it.status.name == "ACTIVE" || it.status.name == "TRIAL" }
                     val totalThisMonth = calculateTotalSpendForMonth(activeSubs, endedSubs, LocalDate.now(), onlyConfirmed = false)
 
-                    // 2. Perhitungan Riwayat (Hanya yang sudah terkonfirmasi bayar)
                     val monthlyHistory = calculatePastMonthsSpending(activeSubs, endedSubs)
                     val lifetimeSpend = monthlyHistory.sumOf { it.amount }
 
@@ -214,7 +209,7 @@ class DashboardViewModel @Inject constructor(
 
         viewModelScope.launch {
             repository.getSubscriptionHistory()
-                .catch { /* silent fail */ }
+                .catch { }
                 .collect { history ->
                     _uiState.update { it.copy(subscriptionHistory = history) }
                     
@@ -242,9 +237,6 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Menandai tagihan tertua yang belum dibayar sebagai lunas.
-     */
     fun markAsPaid(subscription: Subscription) {
         viewModelScope.launch {
             val unconfirmed = subscription.getUnconfirmedPaymentDates()
@@ -254,9 +246,6 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Melompati seluruh tagihan tertunda dan menandai bulan ini sebagai lunas.
-     */
     fun skipAndConfirmCurrent(subscription: Subscription) {
         viewModelScope.launch {
             val updatedSub = subscription.skipOverdueAndConfirmCurrent()

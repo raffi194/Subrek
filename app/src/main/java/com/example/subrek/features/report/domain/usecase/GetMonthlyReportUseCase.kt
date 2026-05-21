@@ -12,7 +12,7 @@ class GetMonthlyReportUseCase @Inject constructor() {
     operator fun invoke(subscriptions: List<Subscription>, isYearlyTrend: Boolean): SubscriptionReport {
         val validSubs = subscriptions.filter { it.status != SubscriptionStatus.PAUSED }
         
-        // 1. Agregasi Total Pengeluaran Saat Ini
+
         val totalSpend = validSubs.sumOf { sub ->
             when (sub.billingCycle.name) {
                 "YEARLY" -> sub.price / 12.0
@@ -20,20 +20,16 @@ class GetMonthlyReportUseCase @Inject constructor() {
             }
         }
 
-        // 2. 🛠️ DIUBAH: Mengisi emptyMap() karena breakdown pengelompokan kategori sudah dihapus dari skema app
         val breakdown = emptyMap<String, Double>()
 
-        // 3. KUERI AGREGAT DATA RENTANG WAKTU (Membentuk Poin Tren Grafik Garis)
         val trendPoints = mutableMapOf<String, Double>()
         val today = LocalDate.now()
 
         if (isYearlyTrend) {
-            // Rentang Tahunan: Kelompokkan 6 bulan terakhir (Format: "MMM YY")
             for (i in 5 downTo 0) {
                 val targetMonth = today.minusMonths(i.toLong())
                 val label = targetMonth.format(DateTimeFormatter.ofPattern("MMM yy"))
-                
-                // Simulasikan akumulasi historis biaya bulanan aktif di rentang bulan tersebut
+
                 val monthlySum = validSubs.filter { 
                     it.createdAt <= targetMonth 
                 }.sumOf { sub ->
@@ -45,10 +41,8 @@ class GetMonthlyReportUseCase @Inject constructor() {
                 trendPoints[label] = monthlySum
             }
         } else {
-            // Rentang Bulanan: Kelompokkan 4 minggu terakhir (Format: "W1", "W2", dst)
             for (i in 4 downTo 1) {
                 val label = "Minggu $i"
-                // Perhitungan proporsional berdasarkan total pengeluaran bulanan yang sudah dikonversi
                 val weeklySum = totalSpend / 4 * (0.8 + (i * 0.05))
                 trendPoints[label] = weeklySum
             }

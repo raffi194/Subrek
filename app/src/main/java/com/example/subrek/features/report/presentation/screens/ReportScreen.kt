@@ -50,7 +50,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 1. INFO BOX ALERTER APABILA ADA GHOST SUBSCRIPTIONS YANG TERDETEKSI
             if (state.detectedGhostCount > 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -70,7 +69,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
                 }
             }
 
-            // Selector Tipe Tren (Bulanan vs Tahunan)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -97,7 +95,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
                 ) { Text("Tahunan", fontSize = 13.sp) }
             }
 
-            // 2. KANVAS REKAPITULASI GRAFIK GARIS KUSTOM (LINE CHART TREND POINTS)
             when (val reportResult = state.reportState) {
                 is UiState.Success -> {
                     val report = reportResult.data
@@ -118,7 +115,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
                             
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Canvas Perender Grafik Garis Murni
                             Canvas(modifier = Modifier.fillMaxWidth().height(160.dp)) {
                                 if (points.isNotEmpty()) {
                                     val maxVal = points.maxOrNull()?.takeIf { it > 0 } ?: 1.0
@@ -130,19 +126,16 @@ fun ReportScreen(viewModel: ReportViewModel) {
                                         val y = size.height - ((valPoint / maxVal).toFloat() * size.height)
                                         
                                         if (idx == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                                        
-                                        // Gambar titik koordinat lingkaran kecil disetiap sumbu simpul
+
                                         drawCircle(color = PrimaryOrange, radius = 8f, center = Offset(x, y))
                                     }
-                                    
-                                    // Gambar Garis Aliran Utama Tren Grafik
+
                                     drawPath(path = path, color = PrimaryRed, style = Stroke(width = 6f))
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Baris Label Sumbu X Grafik
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 labels.forEach { text ->
                                     Text(text = text, fontSize = 10.sp, color = Slate400, fontWeight = FontWeight.Bold)
@@ -151,7 +144,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         }
                     }
 
-                    // 3. BREAKDOWN PER KATEGORI
                     Text("Breakdown Per Kategori", color = Slate50, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     report.categoryBreakdown.forEach { (category, amount) ->
                         val formattedAmount = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {

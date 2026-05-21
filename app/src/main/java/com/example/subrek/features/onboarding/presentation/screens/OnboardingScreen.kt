@@ -81,15 +81,12 @@ fun OnboardingScreen(
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
 
-    // Launcher untuk Request Izin Notifikasi (Android 13+)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { _ ->
-        // Jalankan navigasi utama ke dashboard terlepas dari diizinkan atau tidak
         viewModel.completeOnboarding()
     }
 
-    // Mengamati jika onboarding telah selesai, langsung arahkan ke Dashboard
     LaunchedEffect(uiState.isOnboardingCompleted) {
         if (uiState.isOnboardingCompleted == true) {
             onNavigateToDashboard()
@@ -99,11 +96,10 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Slate950) // Menggunakan basis token Tailwind Slate950
+            .background(Slate950)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // Tombol Lewati (Skip) di bagian atas
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -117,7 +113,6 @@ fun OnboardingScreen(
             }
         }
 
-        // Konten Slider Onboarding
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -131,7 +126,6 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Ilustrasi Karakter/Icon besar (Skala kelipatan 4dp)
                 Box(
                     modifier = Modifier
                         .size(160.dp)
@@ -144,7 +138,6 @@ fun OnboardingScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Judul Text
                 Text(
                     text = pages[page].title,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -156,7 +149,6 @@ fun OnboardingScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Deskripsi Text
                 Text(
                     text = pages[page].description,
                     color = Slate400,
@@ -167,14 +159,12 @@ fun OnboardingScreen(
             }
         }
 
-        // Bagian Bawah: Indikator Pager & Tombol Aksi
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Pager Indicators Dot (Tailwind spacing)
             Row(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -193,7 +183,6 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Tombol Lanjut / Mulai Sekarang
             Button(
                 onClick = {
                     if (pagerState.currentPage < pages.size - 1) {
@@ -201,7 +190,6 @@ fun OnboardingScreen(
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     } else {
-                        // Di langkah terakhir, jalankan alur runtime request izin notifikasi untuk Android 13+
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {

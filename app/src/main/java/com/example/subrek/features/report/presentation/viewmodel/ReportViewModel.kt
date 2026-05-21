@@ -33,8 +33,7 @@ class ReportViewModel @Inject constructor(
         _isYearlyTrend,
         _ghostCount
     ) { subs, isYearly, ghostCount ->
-        
-        // Jalankan kalkulasi agregat laporan tren
+
         val report = getMonthlyReportUseCase(subs, isYearly)
         
         ReportUiState(
@@ -49,7 +48,6 @@ class ReportViewModel @Inject constructor(
     )
 
     init {
-        // Otomatis jalankan pemindaian algoritma Ghost Detector saat halaman dibuka
         viewModelScope.launch {
             subscriptionRepository.getAllSubscriptions().firstOrNull()?.let { currentSubs ->
                 val detected = scanGhostSubscriptionsUseCase(currentSubs)

@@ -45,18 +45,15 @@ fun SubscriptionDetailScreen(
     val datePickerState = rememberDatePickerState()
     var showDatePicker by remember { mutableStateOf(false) }
 
-    // State form internal
     var priceInput by remember { mutableStateOf("") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Sinkronisasi data awal saat entitas berhasil dimuat dari DB
     LaunchedEffect(uiState.subscription) {
         uiState.subscription?.let {
             priceInput = it.price.toInt().toString()
         }
     }
 
-    // Aksi otomatis jika operasi mutasi berhasil dieksekusi
     if (uiState.isUpdateSuccess || uiState.isTerminationSuccess) {
         LaunchedEffect(Unit) { onNavigateBack() }
     }
@@ -89,7 +86,6 @@ fun SubscriptionDetailScreen(
                     .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. AREA METADATA UTAMA (ICON & NAMA)
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
@@ -100,7 +96,7 @@ fun SubscriptionDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = "https://placeholder.co/100", // Icon URL not in domain model yet, using placeholder
+                            model = "https://placeholder.co/100",
                             contentDescription = null,
                             modifier = Modifier
                                 .size(64.dp)
@@ -124,8 +120,6 @@ fun SubscriptionDetailScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
-                // 2. LOGIKA PENGEDITAN FORM
-                // Field 1: Nama Aplikasi (Locked - Read Only)
                 OutlinedTextField(
                     value = sub.name,
                     onValueChange = {},
@@ -136,7 +130,6 @@ fun SubscriptionDetailScreen(
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.LightGray, unfocusedBorderColor = Color.LightGray)
                 )
 
-                // Field 2: Biaya / Harga (Editable)
                 OutlinedTextField(
                     value = viewModel.priceInput,
                     onValueChange = { viewModel.priceInput = it },
@@ -145,7 +138,6 @@ fun SubscriptionDetailScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
-                // Field 3: Periode Subscriptions / Billing Cycle (Editable Dropdown)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     ExposedDropdownMenuBox(
                         expanded = isDropdownExpanded,
@@ -167,7 +159,7 @@ fun SubscriptionDetailScreen(
                                 DropdownMenuItem(
                                     text = { Text(cycle) },
                                     onClick = {
-                                        viewModel.selectedCycle = cycle  // ← update ViewModel
+                                        viewModel.selectedCycle = cycle
                                         isDropdownExpanded = false
                                     }
                                 )
@@ -176,16 +168,15 @@ fun SubscriptionDetailScreen(
                     }
                 }
 
-                // Field 4: Tanggal Mulai Penagihan (Editable)
                 OutlinedTextField(
                     value = viewModel.startDateInput,
-                    onValueChange = {}, // Read only
+                    onValueChange = {},
                     label = { Text("Tanggal Mulai Penagihan") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showDatePicker = true }, // Klik untuk buka kalender
+                        .clickable { showDatePicker = true },
                     readOnly = true,
-                    enabled = false, // Agar field tidak bisa diketik manual
+                    enabled = false,
                     trailingIcon = {
                         IconButton(onClick = { showDatePicker = true }) {
                             Icon(Icons.Default.DateRange, contentDescription = "Pilih Tanggal")
@@ -193,9 +184,7 @@ fun SubscriptionDetailScreen(
                     }
                 )
 
-                // DIALOG DATE PICKER (Ditaruh di bawah field atau di dalam Box)
                 if (showDatePicker) {
-                    // Parse tanggal saat ini untuk default value picker
                     val initialDate = try {
                         LocalDate.parse(viewModel.startDateInput, DateTimeFormatter.ISO_LOCAL_DATE)
                             .atStartOfDay(ZoneId.systemDefault())
@@ -215,7 +204,6 @@ fun SubscriptionDetailScreen(
                                     val date = Instant.ofEpochMilli(millis)
                                         .atZone(ZoneId.systemDefault())
                                         .toLocalDate()
-                                    // UPDATE KE VIEWMODEL
                                     viewModel.startDateInput = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
                                 }
                                 showDatePicker = false
@@ -229,8 +217,6 @@ fun SubscriptionDetailScreen(
                     }
                 }
 
-                // 3. SELEKSI AKSI FINSIAL BUTTONS
-                // Button Aksi Simpan Perubahan Detail
                 Button(
                     onClick = { viewModel.updateSubscriptionBilling() },
                     modifier = Modifier.fillMaxWidth()
@@ -239,7 +225,6 @@ fun SubscriptionDetailScreen(
                 }
             }
 
-                // Button "Akhiri Langganan" di bagian paling bawah halaman
                 OutlinedButton(
                     onClick = { viewModel.terminateSubscriptionService() },
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),

@@ -8,7 +8,6 @@ import javax.inject.Inject
 
 class ReportRepositoryImpl @Inject constructor() : ReportRepository {
     override fun getMonthlyReport(month: String): Flow<SubscriptionReport> {
-        // Implementation for calculating reports from Room or Remote data
         return flowOf(
             SubscriptionReport(
                 totalSpend = 0.0,

@@ -16,7 +16,6 @@ class CatalogFilterTest {
             CatalogItem(id = "4", name = "Notion Premium", iconUrl = null, isCustom = true)
         )
 
-        // Skenario: Filter Pencarian Kata "Notion"
         val searchQuery = "Notion"
         val filterSearch = mockCatalog.filter { item ->
             item.name.contains(searchQuery, ignoreCase = true)

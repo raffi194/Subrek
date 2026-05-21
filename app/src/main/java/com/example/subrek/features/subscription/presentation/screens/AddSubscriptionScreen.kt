@@ -81,7 +81,6 @@ fun AddSubscriptionScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Selector Ikon Aplikasi
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -121,7 +120,6 @@ fun AddSubscriptionScreen(
                 }
             }
 
-            // Input Nama Layanan/Aplikasi
             OutlinedTextField(
                 value = formState.name,
                 onValueChange = { viewModel.onNameChange(it) },
@@ -136,7 +134,6 @@ fun AddSubscriptionScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Button Simpan
             Button(
                 onClick = { viewModel.saveSubscription() },
                 enabled = !formState.isLoading,

@@ -60,7 +60,6 @@ fun TambahLanggananScreen(
     val datePickerState = rememberDatePickerState()
     var showDatePicker by remember { mutableStateOf(false) }
 
-    // State Input Form Detail Berlangganan
     var priceInput by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("") }
     var selectedCycle by remember { mutableStateOf("Monthly") }
@@ -68,7 +67,6 @@ fun TambahLanggananScreen(
     var isFreeTrial by remember { mutableStateOf(false) }
     var isCycleDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Reset form states when user changes selected app
     LaunchedEffect(selectedAppForForm) {
         priceInput = ""
         paymentMethod = ""
@@ -194,7 +192,6 @@ fun TambahLanggananScreen(
                                             }
                                         )
                                     } else {
-                                        // App Default tidak bisa di-swipe hapus
                                         CatalogItemRow(
                                             app = app,
                                             onClick = { selectedAppForForm = app }
@@ -206,7 +203,6 @@ fun TambahLanggananScreen(
                         else -> {}
                     }
                 } else {
-                    // FORM DETAIL BERLANGGANAN (Sama seperti kode asli Anda)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize().padding(top = 8.dp)
@@ -320,9 +316,6 @@ fun TambahLanggananScreen(
                 }
             }
 
-            // =========================================================================
-            // DIALOG TAMBAHAN UNTUK ENTRI KUSTOM
-            // =========================================================================
             if (showAppDialog) {
                 var appName by remember { mutableStateOf("") }
                 var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
@@ -409,9 +402,6 @@ fun TambahLanggananScreen(
                 )
             }
 
-            // =========================================================================
-            // DIALOG KONFIRMASI HAPUS APLIKASI KATALOG
-            // =========================================================================
             if (appToDelete != null) {
                 AlertDialog(
                     onDismissRequest = { appToDelete = null },

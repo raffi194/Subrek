@@ -7,7 +7,7 @@ data class Subscription(
     val name: String,
     val price: Double,
     val currency: String,
-    val billingCycle: BillingCycle, // MONTHLY, YEARLY, WEEKLY
+    val billingCycle: BillingCycle,
     val startDate: LocalDate,
     val nextPaymentDate: LocalDate,
     val paymentMethod: String,

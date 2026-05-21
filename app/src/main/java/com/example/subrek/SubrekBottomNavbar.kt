@@ -51,9 +51,6 @@ fun SubrekBottomNavbar(
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // 👇 PERBAIKAN UTAMA DI SINI 👇
-                            // Menggunakan rute eksplisit ("homepage") agar tidak
-                            // bermasalah dengan hilangnya layar Onboarding.
                             popUpTo("homepage") {
                                 saveState = true
                             }

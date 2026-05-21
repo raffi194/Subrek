@@ -33,7 +33,7 @@ object AppModule {
             "subrek_database"
 
         )
-            .fallbackToDestructiveMigration() // 👈 TAMBAHKAN BARIS INI
+
             .build()
     }
 

@@ -46,7 +46,6 @@ sealed class Screen(val route: String) {
     }
 }
 
-// Route yang menampilkan BottomNavbar
 private val bottomNavRoutes = setOf(
     Screen.Dashboard.route,
     Screen.TambahLangganan.route,
@@ -60,7 +59,6 @@ fun MainNavigation(
     val onboardingViewModel: OnboardingViewModel = hiltViewModel()
     val onboardingUiState by onboardingViewModel.uiState.collectAsState()
 
-    // Jika data onboarding completed masih memuat (null), berikan layar pemuat sementara yang aman
     if (onboardingUiState.isOnboardingCompleted == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -68,7 +66,6 @@ fun MainNavigation(
         return
     }
 
-    // Tentukan layar pertama berdasarkan status onboarding
     val startDestination = remember(onboardingUiState.isOnboardingCompleted) {
         if (onboardingUiState.isOnboardingCompleted == true) {
             Screen.Dashboard.route
@@ -131,8 +128,6 @@ fun MainNavigation(
                 val viewModel: ProfileViewModel = hiltViewModel()
                 ProfileScreen(
                     viewModel = viewModel
-                    // Catatan: Pastikan Anda juga menghapus argumen 'onNavigateToLogin'
-                    // di dalam komponen ProfileScreen.kt Anda, karena fitur logout sudah tidak ada.
                 )
             }
 

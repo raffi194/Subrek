@@ -30,7 +30,6 @@ class NotificationWorker @AssistedInject constructor(
 
     override suspend fun doWork(): ListenableWorker.Result {
         return try {
-            // 1. DETEKSI JATUH TEMPO: Ambil layanan yang kritis (Hari-H, 3 Hari, dan 7 Hari lagi)
             val expiringToday = repository.getSubscriptionsExpiringInDays(0)
             val expiringIn3Days = repository.getSubscriptionsExpiringInDays(3)
             val expiringIn7Days = repository.getSubscriptionsExpiringInDays(7)
@@ -40,7 +39,6 @@ class NotificationWorker @AssistedInject constructor(
 
             var notificationId = 100
 
-            // 2. TRIGGER PUSH NOTIFICATION DENGAN PESAN RELEVAN
             expiringToday.forEach { sub ->
                 showNotification(
                     notificationManager,
@@ -71,7 +69,7 @@ class NotificationWorker @AssistedInject constructor(
             ListenableWorker.Result.success()
         } catch (e: Exception) {
             e.printStackTrace()
-            ListenableWorker.Result.retry() // Coba kembali nanti jika terjadi interupsi internal
+            ListenableWorker.Result.retry()
         }
     }
 

@@ -14,7 +14,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    // Menggunakan SharedPreferences untuk menyimpan data profil secara lokal
     private val sharedPreferences: SharedPreferences
 ) : ViewModel() {
 
@@ -29,13 +28,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                // 1. Ambil data profil dari SharedPreferences (Penyimpanan Lokal)
                 val localName = sharedPreferences.getString("pref_full_name", "Pengguna Subrek") ?: "Pengguna Subrek"
                 val localAvatar = sharedPreferences.getString("pref_avatar_url", null)
 
                 _uiState.update { it.copy(
-                    id = "local_user", // ID Dummy
-                    email = "offline@subrek.app", // Email dummy atau bisa dihapus dari UI
+                    id = "local_user",
+                    email = "offline@subrek.app",
                     fullName = localName,
                     avatarUrl = localAvatar,
                     isLoading = false
@@ -52,12 +50,10 @@ class ProfileViewModel @Inject constructor(
             try {
                 var finalAvatarUrl = _uiState.value.avatarUrl
 
-                // 2. Gunakan URI lokal langsung sebagai string (Tidak diunggah ke internet)
                 if (newImageUri != null) {
                     finalAvatarUrl = newImageUri.toString()
                 }
 
-                // 3. Simpan perubahan ke SharedPreferences
                 sharedPreferences.edit().apply {
                     putString("pref_full_name", newFullName)
                     putString("pref_avatar_url", finalAvatarUrl)
@@ -88,5 +84,4 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(navigateToEdit = false) }
     }
 
-    // FUNGSI LOGOUT TELAH DIHAPUS
 }

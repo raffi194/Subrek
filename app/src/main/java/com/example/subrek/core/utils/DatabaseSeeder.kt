@@ -25,12 +25,10 @@ class DatabaseSeeder @Inject constructor(
                 val alreadySeeded = sharedPreferences.getBoolean(KEY_SEED_DONE, false)
                 
                 if (existingApps.isEmpty() || !alreadySeeded) {
-                    // Clear old database data for clean re-seeding
                     subscriptionDao.deleteAllCategories()
                     subscriptionDao.deleteAllApps()
                     subscriptionDao.deleteAllSubscriptions()
 
-                    // Seed katalog app default
                     SeedData.defaultApps.forEach { app ->
                         subscriptionDao.insertCustomApp(app)
                     }

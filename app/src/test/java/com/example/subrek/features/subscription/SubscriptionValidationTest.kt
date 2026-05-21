@@ -11,11 +11,10 @@ import java.time.LocalDate
 
 class SubscriptionValidationTest {
 
-    // 1. PENGUJIAN VALIDASI KEBENARAN INPUT DATA
     @Test
     fun `validateInput_hargaNegatif_harusMengembalikanFalse`() {
         val inputNama = "Netflix"
-        val inputHarga = -15000.0 // Negatif tidak diperbolehkan
+        val inputHarga = -15000.0
 
         val isValid = inputNama.isNotBlank() && inputHarga >= 0.0
         assertFalse("Input seharusnya tidak valid jika harga negatif", isValid)
@@ -39,7 +38,6 @@ class SubscriptionValidationTest {
         assertTrue("Input harus valid jika nama terisi dan harga positif", isValid)
     }
 
-    // 2. PENGUJIAN KALKULASI FINANSIAL AVERAGE CONSUMPTION (Sesuai Aturan Kueri SQL public.user_subscription_analytics)
     @Test
     fun `calculateAverageMonthlyConsumption_berbagaiSiklus_harusTepat`() {
         val today = LocalDate.now()

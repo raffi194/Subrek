@@ -58,7 +58,7 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val profileState by profileViewModel.uiState.collectAsState()
-    val context = LocalContext.current // Tambahkan ini
+    val context = LocalContext.current
     var showSpendingBottomSheet by remember { mutableStateOf(false) }
     var subscriptionToConfirmPaid by remember { mutableStateOf<Subscription?>(null) }
 
@@ -132,7 +132,7 @@ fun DashboardScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.loadDashboardData() // Panggil fungsi untuk mengambil data terbaru
+        viewModel.loadDashboardData()
     }
 
     if (showSpendingBottomSheet) {
@@ -157,7 +157,6 @@ fun DashboardScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Card Kumulatif (Lifetime Spending) - Desain Premium
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -450,7 +449,6 @@ fun DashboardScreen(
                 }
             }
 
-            // 2. DAFTAR LANGGANAN AKTIF DAN FREE TRIAL
             val activeSubscriptions = state.subscriptionsList.filter { it.status == SubscriptionStatus.ACTIVE }
             val freeTrialSubscriptions = state.subscriptionsList.filter { it.status == SubscriptionStatus.TRIAL }
 
@@ -550,9 +548,6 @@ fun DashboardScreen(
     }
 }
 
-// =============================================================================
-// Composable SwipeToDelete
-// =============================================================================
 @Composable
 fun SwipeToDeleteSubscriptionItem(
     subscription: Subscription,
@@ -610,7 +605,7 @@ fun SwipeToDeleteSubscriptionItem(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .background(Rose500, shape = RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.CenterEnd
         ) {
@@ -656,9 +651,6 @@ fun SwipeToDeleteSubscriptionItem(
     }
 }
 
-// =============================================================================
-// SubscriptionItemRow
-// =============================================================================
 @Composable
 fun SubscriptionItemRow(
     sub: Subscription,
@@ -670,18 +662,15 @@ fun SubscriptionItemRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFF8FAFC), shape = RoundedCornerShape(16.dp))
-            // Clickable dihapus dari Row agar geser (swipe) tidak macet
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        // horizontalArrangement = Arrangement.SpaceBetween // Dihapus karena kita menggunakan weight dan letak elemen berurutan
     ) {
 
-        // --- TAMBAHAN KODE UNTUK GAMBAR / PLACEHOLDER MULAI DI SINI ---
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFE2E8F0)), // Warna latar belakang placeholder
+                .background(Color(0xFFE2E8F0)),
             contentAlignment = Alignment.Center
         ) {
             if (!sub.iconUrl.isNullOrEmpty()) {
@@ -692,7 +681,6 @@ fun SubscriptionItemRow(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Placeholder: Menampilkan huruf pertama dari nama langganan jika gambar tidak ada
                 Text(
                     text = sub.name.take(1).uppercase(),
                     color = Slate500,
@@ -703,7 +691,6 @@ fun SubscriptionItemRow(
         }
 
         Spacer(modifier = Modifier.width(12.dp))
-        // --- TAMBAHAN KODE SELESAI ---
 
         Column(modifier = Modifier.weight(0.6f)) {
             Text(
@@ -711,7 +698,6 @@ fun SubscriptionItemRow(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = Color.Black,
-                // Clickable dipindah ke teks nama agar tetap bisa diklik untuk detail
                 modifier = Modifier.clickable { onClick() }
             )
             Text(

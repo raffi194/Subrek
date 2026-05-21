@@ -2,7 +2,6 @@ package com.example.subrek.core.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Tailwind CSS v4.1 inspired palette
 val Slate950 = Color(0xFF020617)
 val Slate900 = Color(0xFF0F172A)
 val Slate800 = Color(0xFF1E293B)

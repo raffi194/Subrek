@@ -30,7 +30,6 @@ class SubscriptionDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // Mengambil ID parameter dari argumen navigasi Compose
     private val subscriptionId: String = checkNotNull(savedStateHandle["subscriptionId"])
 
     var priceInput by mutableStateOf("")
@@ -61,11 +60,9 @@ class SubscriptionDetailViewModel @Inject constructor(
     fun updateSubscriptionBilling() {
         viewModelScope.launch {
             try {
-                // Parsing harga
                 val price = priceInput.replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
                 val currentSub = _uiState.value.subscription ?: return@launch
 
-                // Panggil repository
                 repository.updateSubscriptionBilling(
                     id = subscriptionId,
                     price = price,

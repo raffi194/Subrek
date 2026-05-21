@@ -13,7 +13,6 @@ class OnboardingRepositoryImpl @Inject constructor(
     }
 
     override fun isFirstLaunch(): Boolean {
-        // Default true jika key belum pernah disimpan
         return sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
     }
 

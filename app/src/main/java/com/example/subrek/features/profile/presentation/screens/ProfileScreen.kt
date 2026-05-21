@@ -42,25 +42,23 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White) // Latar belakang putih
+                .background(Color.White)
                 .padding(paddingValues)
         ) {
 
-            // ---- BAGIAN 1: HEADER PROFIL ----
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White) // Latar belakang putih
+                    .background(Color.White)
                     .padding(vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Foto Profil
                 Box(
                     modifier = Modifier
                         .size(88.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFE2E8F0)), // Light Gray placeholder
+                        .background(Color(0xFFE2E8F0)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!uiState.avatarUrl.isNullOrEmpty()) {
@@ -81,7 +79,6 @@ fun ProfileScreen(
                     }
                 }
 
-                // Nama Lengkap (Hitam)
                 Text(
                     text = uiState.fullName?.takeIf { it.isNotEmpty() } ?: "Pengguna",
                     fontSize = 18.sp,
@@ -89,7 +86,6 @@ fun ProfileScreen(
                     color = Color.Black
                 )
 
-                // Email (Hitam/Gray)
                 Text(
                     text = uiState.email,
                     fontSize = 13.sp,
@@ -99,7 +95,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Bagian Edit Profil telah dihapus sepenuhnya
         }
     }
 }
