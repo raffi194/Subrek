@@ -76,7 +76,7 @@ interface SubscriptionRepository {
 
     // --- Pembersihan Kategori ---
     suspend fun insertCustomApp(app: com.example.subrek.features.subscription.data.local.LocalAppEntity)
-    fun getCustomApps(): Flow<List<com.example.subrek.features.subscription.data.local.LocalAppEntity>>
+    fun getCatalogItemsFlow(): Flow<List<com.example.subrek.features.subscription.domain.model.CatalogItem>>
     suspend fun saveSubscription(name: String, iconUrl: String?, price: Double, cycle: String, date: String, isTrial: Boolean)
 
     suspend fun saveSubscriptionExtended(

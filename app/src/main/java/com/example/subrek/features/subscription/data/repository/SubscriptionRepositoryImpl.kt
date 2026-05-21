@@ -156,8 +156,31 @@ class SubscriptionRepositoryImpl @Inject constructor(
         subscriptionDao.insertCustomApp(app)
     }
 
-    override fun getCustomApps(): Flow<List<LocalAppEntity>> {
-        return subscriptionDao.getCustomApps()
+    override fun getCatalogItemsFlow(): Flow<List<com.example.subrek.features.subscription.domain.model.CatalogItem>> {
+        return subscriptionDao.getCustomApps().map { localApps ->
+            // 1. Ambil data aplikasi default dari SeedData dan map ke model Domain
+            val defaultCatalog = com.example.subrek.core.utils.SeedData.defaultApps.map { localApp ->
+                com.example.subrek.features.subscription.domain.model.CatalogItem(
+                    id = localApp.id,
+                    name = localApp.name,
+                    iconUrl = localApp.iconUrl,
+                    isCustom = false
+                )
+            }
+
+            // 2. Ambil data kustom dari DB (hanya yang user created untuk menghindari duplikasi jika sudah di-seed)
+            val customCatalog = localApps.filter { !it.id.startsWith("app_") }.map { app ->
+                com.example.subrek.features.subscription.domain.model.CatalogItem(
+                    id = app.id,
+                    name = app.name,
+                    iconUrl = app.iconUrl,
+                    isCustom = true
+                )
+            }
+
+            // 3. Gabungkan keduanya untuk dikirim langsung ke UI secara reaktif
+            defaultCatalog + customCatalog
+        }
     }
 
     override suspend fun deleteCustomApp(id: String) {

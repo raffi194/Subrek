@@ -10,7 +10,7 @@ import androidx.room.TypeConverters
         LocalCategoryEntity::class,
         LocalAppEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

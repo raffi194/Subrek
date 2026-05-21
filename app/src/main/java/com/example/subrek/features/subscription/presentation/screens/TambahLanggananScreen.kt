@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.subscription.domain.model.CatalogItem
 import com.example.subrek.features.subscription.presentation.viewmodel.TambahLanggananViewModel
 import java.time.LocalDate
@@ -47,7 +49,8 @@ fun TambahLanggananScreen(
     onSuccessSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var selectedAppForForm by remember { mutableStateOf<CatalogItem?>(null) }
 
@@ -125,77 +128,82 @@ fun TambahLanggananScreen(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    val filteredItems = uiState.catalogItems.filter { item ->
-                        item.name.contains(uiState.searchQuery, ignoreCase = true)
-                    }
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize().padding(top = 8.dp)
-                    ) {
-                        items(filteredItems, key = { it.id }) { app ->
-                            // --- Implementasi Swipe to Delete ---
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = {
-                                    if (it == SwipeToDismissBoxValue.EndToStart) {
-                                        appToDelete = app
-                                    }
-                                    false
-                                }
-                            )
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {
-                                    val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
-                                        MaterialTheme.colorScheme.error else Color.Transparent
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(vertical = 4.dp)
-                                            .background(color, RoundedCornerShape(12.dp)),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.White, modifier = Modifier.padding(end = 16.dp))
-                                    }
-                                },
-                                content = {
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth().clickable { selectedAppForForm = app },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                AsyncImage(
-                                                    model = app.iconUrl ?: "https://placeholder.co/100",
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
-                                                )
-                                                Spacer(modifier = Modifier.width(16.dp))
-                                                Column {
-                                                    Text(text = app.name, fontWeight = FontWeight.SemiBold)
-                                                }
-                                            }
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                            )
-                                        }
-                                    }
-                                }
-                            )
+                    when (val state = catalogState) {
+                        is UiState.Loading -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
                         }
+                        is UiState.Empty -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Belum ada aplikasi di katalog.", color = Color.Gray)
+                            }
+                        }
+                        is UiState.Error -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        is UiState.Success -> {
+                            val filteredItems = state.data.filter { item ->
+                                item.name.contains(uiState.searchQuery, ignoreCase = true)
+                            }
+
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxSize().padding(top = 8.dp)
+                            ) {
+                                items(filteredItems, key = { it.id }) { app ->
+                                    if (app.isCustom) {
+                                        // --- Implementasi Swipe to Delete HANYA untuk Custom App ---
+                                        val dismissState = rememberSwipeToDismissBoxState(
+                                            confirmValueChange = {
+                                                if (it == SwipeToDismissBoxValue.EndToStart) {
+                                                    appToDelete = app
+                                                }
+                                                false
+                                            }
+                                        )
+
+                                        SwipeToDismissBox(
+                                            state = dismissState,
+                                            enableDismissFromStartToEnd = false,
+                                            backgroundContent = {
+                                                val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart)
+                                                    MaterialTheme.colorScheme.error else Color.Transparent
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(vertical = 4.dp)
+                                                        .background(color, RoundedCornerShape(12.dp)),
+                                                    contentAlignment = Alignment.CenterEnd
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Delete,
+                                                        contentDescription = "Hapus",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.padding(end = 16.dp)
+                                                    )
+                                                }
+                                            },
+                                            content = {
+                                                CatalogItemRow(
+                                                    app = app,
+                                                    onClick = { selectedAppForForm = app }
+                                                )
+                                            }
+                                        )
+                                    } else {
+                                        // App Default tidak bisa di-swipe hapus
+                                        CatalogItemRow(
+                                            app = app,
+                                            onClick = { selectedAppForForm = app }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        else -> {}
                     }
                 } else {
                     // FORM DETAIL BERLANGGANAN (Sama seperti kode asli Anda)
@@ -429,6 +437,64 @@ fun TambahLanggananScreen(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun CatalogItemRow(
+    app: CatalogItem,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                AsyncImage(
+                    model = app.iconUrl ?: "https://placeholder.co/100",
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(text = app.name, fontWeight = FontWeight.SemiBold)
+                    if (app.isCustom) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Text(
+                                text = "Custom App",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
         }
     }
 }

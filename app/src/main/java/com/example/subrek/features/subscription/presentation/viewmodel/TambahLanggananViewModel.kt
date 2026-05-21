@@ -2,6 +2,7 @@ package com.example.subrek.features.subscription.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.subrek.core.utils.UiState
 import com.example.subrek.features.subscription.data.local.LocalAppEntity
 import com.example.subrek.features.subscription.domain.model.CatalogItem
 import com.example.subrek.features.subscription.domain.repository.SubscriptionRepository
@@ -14,7 +15,8 @@ import javax.inject.Inject
 data class CatalogUiState(
     val catalogItems: List<CatalogItem> = emptyList(),
     val searchQuery: String = "",
-    val isSaveSuccess: Boolean = false
+    val isSaveSuccess: Boolean = false,
+    val catalogState: UiState<List<CatalogItem>> = UiState.Loading
 )
 
 @HiltViewModel
@@ -25,25 +27,16 @@ class TambahLanggananViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
-    init {
-        observeCatalogApps()
-    }
-
-    private fun observeCatalogApps() {
-        viewModelScope.launch {
-            repository.getCustomApps()
-                .map { localApps ->
-                    localApps.map { app ->
-                        val isUserCustom = !app.id.startsWith("app_")
-                        CatalogItem(app.id, app.name, app.iconUrl, isCustom = isUserCustom)
-                    }
-                }
-                .catch { e -> e.printStackTrace() }
-                .collect { items ->
-                    _uiState.update { it.copy(catalogItems = items) }
-                }
+    val catalogState: StateFlow<UiState<List<CatalogItem>>> = repository.getCatalogItemsFlow()
+        .map { list ->
+            if (list.isEmpty()) UiState.Empty else UiState.Success(list)
         }
-    }
+        .catch { emit(UiState.Error(it.message ?: "Terjadi kesalahan")) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UiState.Loading
+        )
 
     fun updateSearchQuery(query: String) { _uiState.update { it.copy(searchQuery = query) } }
 
